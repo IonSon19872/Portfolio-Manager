@@ -468,10 +468,10 @@ def _holding_row(s: dict) -> str:
             f"{td(s['ticker'], 'color:#4f9ef8;font-weight:600')}"
             f"{td((s.get('name') or '')[:26], 'color:#7d8fa8')}"
             f"{td(f'€{p_eur}')}"
-            f"{td(f'<span style=\"color:{color}\">{arrow} {abs(chg):.2f}%</span>')}"
+            f"{td('<span style="color:' + color + '">' + arrow + ' ' + str(round(abs(chg),2)) + '%</span>')}"
             f"{td(s.get('shares', ''))}"
             f"{td(f'€{v_eur}', 'font-weight:600')}"
-            f"{td(f'<span style=\"color:{rc};font-size:10px;text-transform:uppercase\">{rec or counts or chr(8212)}</span>')}"
+            f"{td('<span style="color:' + rc + ';font-size:10px;text-transform:uppercase">' + str(rec or counts or '--') + '</span>')}"
             f"</tr>")
 
 
@@ -581,6 +581,7 @@ def news_digest_html(holdings_with_news: list, run_label: str) -> str:
                 summ += "..."
             url  = a.get("url", "#")
             title = a.get("title", "")
+            summ_div = ("  <div style='color:#7d8fa8;font-size:11px;line-height:1.6'>" + summ + "</div>") if summ else ""
             rows += (
                 f"<tr>"
                 f"<td style='padding:12px 14px;border-bottom:1px solid #21293a;vertical-align:top'>"
@@ -590,7 +591,7 @@ def news_digest_html(holdings_with_news: list, run_label: str) -> str:
                 f"    <span style='color:#52d68a'>{src}</span>"
                 f"    {' * ' + date_str if date_str else ''}"
                 f"  </div>"
-                f"  {f'<div style=\"color:#7d8fa8;font-size:11px;line-height:1.6\">{summ}</div>' if summ else ''}"
+                f"  {summ_div}"
                 f"</td>"
                 f"</tr>"
             )
@@ -641,6 +642,7 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
     chg_arrow  = "^" if (week_chg or 0) >= 0 else "v"
 
     # -- Week-over-week value --------------------------------------------------
+    week_chg_div = ("  <div><div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Week Change</div><div style='font-size:22px;color:" + chg_color + ";font-weight:700'>" + chg_arrow + " " + str(round(abs(week_chg),2)) + "%</div></div>") if week_chg is not None else ""
     week_block = (
         f"<div style='background:#1c2330;border-radius:10px;padding:20px 24px;"
         f"margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px'>"
@@ -649,7 +651,7 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
         f"    letter-spacing:1px;margin-bottom:6px'>Portfolio Value</div>"
         f"    <div style='font-size:28px;color:#52d68a;font-weight:700'>€{total_eur:,.2f}</div>"
         f"  </div>"
-        f"  {'<div><div style=\"font-size:10px;color:#7d8fa8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px\">Week Change</div>' + f'<div style=\"font-size:22px;color:{chg_color};font-weight:700\">{chg_arrow} {abs(week_chg):.2f}%</div></div>' if week_chg is not None else ''}"
+        f"  {week_chg_div}"
         f"</div>"
     )
 
@@ -753,13 +755,14 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
             title = a.get("title","")
             url   = a.get("url","#")
             summ  = (a.get("summary") or "")[:140]
+            summ_html = ("<div style='color:#7d8fa8;font-size:11px;margin-top:3px'>" + summ + "...</div>") if summ else ""
             rows += (
                 f"<tr><td style='padding:11px 14px;border-bottom:1px solid #21293a;vertical-align:top'>"
                 f"<a href='{url}' style='color:#4f9ef8;text-decoration:none;font-weight:600;"
                 f"font-size:12px;display:block;margin-bottom:4px'>{title}</a>"
                 f"<span style='color:#52d68a;font-size:10px'>{src}</span>"
                 f"<span style='color:#7d8fa8;font-size:10px'>{' * '+dt if dt else ''}</span>"
-                f"{'<div style=\"color:#7d8fa8;font-size:11px;margin-top:3px\">'+summ+'...</div>' if summ else ''}"
+                f"{summ_html}"
                 f"</td></tr>"
             )
         news_sections += (
