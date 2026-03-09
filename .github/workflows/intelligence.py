@@ -5,7 +5,7 @@ intelligence.py -- Triggered 2x daily by GitHub Actions
 For every holding in the portfolio (stocks + ETFs):
 
   1. Analyst rating check (Finnhub /stock/upgrade-downgrade)
-     - Fetches changes from the last 7 days.
+     - Fetches changes from the last 7 days. 
      - Compares against ratings_history.json (persisted in the repo).
      - If a GENUINELY NEW change is found today -> sends a SEPARATE
        highlighted email immediately (one per ticker with new changes).
