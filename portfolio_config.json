@@ -128,5 +128,23 @@
     "max_news_per_ticker": 5,
     "finnhub_api_key_env": "FINNHUB_API_KEY",
     "currency": "EUR"
-  }
+  },
+  "portfolio": {
+    "stocks": [],
+    "etfs": []
+  },
+  "alerts": {
+    "movement_threshold_pct": 3.0,
+    "email_enabled": true,
+    "email_from": "ionson19872@gmail.com",
+    "email_password": "",
+    "email_to": "sonteaionut77@gmail.com"
+  },
+  "finnhub": {
+    "api_key": "",
+    "news_days_back": 1,
+    "max_news_per_stock": 3,
+    "ratings_days_back": 7
+  },
+  "last_prices": {}
 }
