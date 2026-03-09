@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f1117;   --s1:#161b22;   --s2:#1c2330;   --s3:#21293a;   --border:#30384a;   --text:#f0f2f5;   --muted:#7d8fa8;   --dim:#4a5568;   --accent:#4f9ef8;   --lime:#52d68a;   --up:#52d68a;   --dn:#f56565;   --warn:#f6ad55;   --intel:#b794f4;
+  --ff:'IBM Plex Mono',monospace; --fh:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--ff);font-size:12.5px;min-height:100vh}
+
+/* ── HEADER ── */
+header{
+  background:var(--s1);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;height:54px;position:sticky;top:0;z-index:100;
+}
+.brand{font-family:var(--fh);font-size:18px;font-weight:800;letter-spacing:-.5px}
+.brand-p{color:var(--accent)}.brand-i{color:var(--intel)}
+.hdr-r{display:flex;align-items:center;gap:10px}
+.clock{background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:5px 12px;font-size:11px;color:var(--muted)}
+#clk{color:var(--lime)}
+.last-update{font-size:10px;color:var(--muted);padding:5px 10px}
+#lu-time{color:var(--accent)}
+
+/* ── NAV ── */
+nav{background:var(--s1);border-bottom:1px solid var(--border);display:flex;padding:0 28px;overflow-x:auto}
+.tab{padding:11px 18px;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.15s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.tab.intel.on{color:var(--intel);border-bottom-color:var(--intel)}
+
+/* ── PAGES ── */
+.page{display:none;padding:24px 28px;max-width:1440px;margin:0 auto}
+.page.on{display:block}
+
+/* ── STAT STRIP ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:9px;padding:16px 18px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--accent),transparent)}
+.slbl{font-size:9.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);margin-bottom:9px}
+.sval{font-family:var(--fh);font-size:24px;font-weight:700;line-height:1}
+.ssub{font-size:10px;color:var(--muted);margin-top:5px}
+.ca{color:var(--accent)}.cu{color:var(--up)}.cd{color:var(--dn)}.ci{color:var(--intel)}.cw{color:var(--warn)}
+
+/* ── SECTION HEAD ── */
+.sh{display:flex;align-items:center;gap:10px;margin:6px 0 14px}
+.st{font-family:var(--fh);font-size:15px;font-weight:700}
+.bdg{background:var(--s3);border:1px solid var(--border);border-radius:20px;padding:2px 10px;font-size:10px;color:var(--muted)}
+.shr{margin-left:auto;display:flex;gap:8px}
+
+/* ── TABLE ── */
+.tbox{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:22px}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--s2)}
+th{padding:9px 14px;text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);white-space:nowrap;font-weight:500}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(79,158,248,.06)}
+.tk{color:var(--accent);font-weight:600;letter-spacing:.5px}
+.nm{color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mn{font-variant-numeric:tabular-nums}
+.vl{font-weight:600}
+.dm{color:var(--muted)}
+
+/* change cell */
+.cc{display:flex;align-items:center;gap:6px}
+.cb{height:3px;border-radius:2px;min-width:2px}
+.bu{background:var(--up)}.bd{background:var(--dn)}
+
+/* rec tag */
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;text-transform:uppercase;font-weight:600}
+.tbu{background:rgba(82,214,138,.12);color:var(--up)}
+.tho{background:rgba(246,173,85,.12);color:var(--warn)}
+.tse{background:rgba(245,101,101,.12);color:var(--dn)}
+.tnw{background:rgba(183,148,244,.12);color:var(--intel);border:1px solid rgba(183,148,244,.20)}
+
+/* ── BUTTONS ── */
+.btn{background:var(--accent);color:#0f1117;border:none;border-radius:6px;padding:7px 16px;font-family:var(--ff);font-size:11px;font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.btn:hover{opacity:.8}
+.bg{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.bg:hover{color:var(--text);border-color:var(--dim)}
+.bi{background:var(--intel);color:#fff}
+.sm{padding:5px 11px;font-size:10.5px}
+
+/* ── ALERTS ── */
+.af{display:flex;flex-direction:column;gap:7px}
+.ai{background:var(--s1);border:1px solid var(--border);border-left:3px solid var(--dim);border-radius:7px;padding:10px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.ai.movement{border-left-color:var(--warn)}
+.ai.rating_change{border-left-color:var(--intel)}
+.ai.news{border-left-color:var(--accent)}
+.ai.digest{border-left-color:var(--up)}
+.ai.intel_run{border-left-color:var(--intel)}
+.atk{color:var(--accent);font-weight:600;margin-right:6px}
+.ats{font-size:10.5px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+
+/* ── INTEL ── */
+.ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
+.ic{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden}
+.ic::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--intel),transparent)}
+.ick{color:var(--intel);font-weight:600;font-size:13px;margin-bottom:3px}
+.icn{color:var(--muted);font-size:11px;margin-bottom:12px}
+.ics{font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:10px 0 6px}
+.nr{display:flex;align-items:center;gap:7px;font-size:11px;margin-bottom:4px;padding:5px 8px;background:var(--s2);border-radius:5px}
+.no{margin-bottom:5px;font-size:11px;color:var(--muted);line-height:1.5}
+.no a{color:var(--accent);text-decoration:none}
+.no a:hover{text-decoration:underline}
+
+/* ── CONFIG ── */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.cb2{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:20px}
+.cb2 h3{font-family:var(--fh);font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;padding-bottom:11px;border-bottom:1px solid var(--border)}
+.fl{display:flex;flex-direction:column;gap:11px}
+.fr{display:flex;gap:8px;align-items:center}
+label{font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:block;margin-bottom:5px}
+input[type=text],input[type=number],input[type=email],input[type=password]{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:8px 11px;color:var(--text);font-family:var(--ff);font-size:12.5px;outline:none;transition:border-color .15s}
+input:focus{border-color:var(--accent)}
+input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+.hr{display:flex;gap:7px;align-items:center;background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:8px 10px}
+.hr input{margin-bottom:0;flex:1}
+.ht{max-width:110px!important;flex:0 0 110px!important}
+.hs{max-width:75px!important;flex:0 0 75px!important}
+.addb{width:100%;background:none;border:1px dashed var(--border);border-radius:7px;color:var(--muted);font-family:var(--ff);font-size:11px;padding:8px;cursor:pointer;transition:all .15s;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px}
+.addb:hover{color:var(--accent);border-color:var(--accent)}
+.stags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.stag{background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:4px 10px;font-size:11px;color:var(--lime);display:flex;align-items:center;gap:6px}
+.stag.it{color:var(--intel)}
+.stag button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0}
+
+/* ── DEPLOY INFO ── */
+.deploy-box{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:18px}
+.deploy-box h3{font-family:var(--fh);font-size:15px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.step{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start}
+.step-num{background:var(--accent);color:#0f1117;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.step-body{line-height:1.6;color:var(--muted)}
+.step-body strong{color:var(--text)}
+code{background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-family:var(--ff);font-size:11.5px;color:var(--lime)}
+pre{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;font-size:11.5px;color:var(--lime);line-height:1.7;margin:10px 0}
+.secret-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--s2);border:1px solid var(--border);border-radius:6px;margin-bottom:7px}
+.secret-name{color:var(--accent);font-weight:600}
+.secret-desc{color:var(--muted);font-size:11px}
+
+/* ── MISC ── */
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:rot .5s linear infinite;vertical-align:middle;margin-left:6px}
+@keyframes rot{to{transform:rotate(360deg)}}
+.empty{color:var(--muted);padding:18px;text-align:center;font-size:12px}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-size:12px;z-index:999;transform:translateY(60px);opacity:0;transition:all .25s;max-width:340px}
+.toast.show{transform:translateY(0);opacity:1}
+.tok{border-left:3px solid var(--up)}.terr{border-left:3px solid var(--dn)}.tinf{border-left:3px solid var(--accent)}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+@media(max-width:760px){.page{padding:14px}.cg{grid-template-columns:1fr}nav{padding:0 14px}header{padding:0 14px}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="brand-p">Portfolio</span> <span class="brand-i">Intelligence</span></div>
+  <div class="hdr-r">
+    <div class="last-update">Updated <span id="lu-time">—</span></div>
+    <div class="clock">CET <span id="clk">--:--:--</span></div>
+    <button class="btn sm bg" onclick="reload()">↻ Reload</button>
+  </div>
+</header>
+
+<nav>
+  <div class="tab on"    onclick="go('dashboard',this)">Dashboard</div>
+  <div class="tab intel" onclick="go('intelligence',this)">🧠 Intelligence</div>
+  <div class="tab"       onclick="go('etf',this)">ETF Holdings</div>
+  <div class="tab"       onclick="go('alerts',this)">Alerts <span id="ac"></span></div>
+  <div class="tab"       onclick="go('weekly',this)">📅 Weekly Report</div>
+  <div class="tab"       onclick="go('config',this)">⚙ Configure</div>
+  <div class="tab"       onclick="go('deploy',this)">🚀 Deploy Guide</div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page on" id="pg-dashboard">
+  <div class="stats">
+    <div class="stat"><div class="slbl">Total Portfolio</div><div class="sval ca" id="s-tot">—</div><div class="ssub">EUR</div></div>
+    <div class="stat"><div class="slbl">Stocks</div><div class="sval" id="s-stk">—</div><div class="ssub">positions</div></div>
+    <div class="stat"><div class="slbl">ETFs</div><div class="sval" id="s-etf">—</div><div class="ssub">positions</div></div>
+    <div class="stat"><div class="slbl">Data From</div><div class="sval" style="font-size:16px" id="s-ts">—</div><div class="ssub">GitHub Actions run</div></div>
+  </div>
+
+  <div class="sh"><div class="st">📈 Stocks</div><div class="bdg" id="b-stk">0</div></div>
+  <div class="tbox"><table>
+    <thead><tr><th>Ticker</th><th>Name</th><th>Price EUR</th><th>Day Chg</th><th>Shares</th><th>Value EUR</th><th>Analyst</th><th>Target</th><th>P/E</th><th>Beta</th><th>Sector</th></tr></thead>
+    <tbody id="tb-stk"><tr><td colspan="11" class="empty">Loading snapshot…</td></tr></tbody>
+  </table></div>
+
+  <div class="sh"><div class="st">🗂 ETFs</div><div class="bdg" id="b-etf">0</div></div>
+  <div class="tbox"><table>
+    <thead><tr><th>Ticker</th><th>Name</th><th>Price EUR</th><th>Day Chg</th><th>Shares</th><th>Value EUR</th><th>52W Low</th><th>52W High</th></tr></thead>
+    <tbody id="tb-etf"><tr><td colspan="8" class="empty">Loading snapshot…</td></tr></tbody>
+  </table></div>
+</div>
+
+<!-- INTELLIGENCE -->
+<div class="page" id="pg-intelligence">
+  <div class="sh">
+    <div class="st" style="color:var(--intel)">🧠 Intelligence — Ratings & News</div>
+    <div class="bdg">Runs 07:30 & 17:00 CET via GitHub Actions</div>
+  </div>
+  <p style="color:var(--muted);font-size:11px;margin-bottom:18px">
+    Analyst rating <strong style="color:var(--intel)">changes</strong> trigger an immediate separate email.
+    News requires a free Finnhub.io. Data below is from the last automated run.
+  </p>
+
+  <div class="sh" style="margin-top:0"><div class="st" style="font-size:13px">⚡ Recent Rating Changes (today)</div></div>
+  <div class="tbox" style="margin-bottom:22px"><table>
+    <thead><tr><th>Ticker</th><th>Date</th><th>Firm</th><th>From</th><th>→ To</th><th>Action</th></tr></thead>
+    <tbody id="tb-rat"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+  </table></div>
+
+  <div class="sh"><div class="st" style="font-size:13px">📰 News by Holding</div></div>
+  <div class="ig" id="news-grid"><div class="empty">Loading intelligence data…</div></div>
+</div>
+
+<!-- ETF HOLDINGS -->
+<div class="page" id="pg-etf">
+  <div class="sh"><div class="st">🗂 ETF Top 15 Holdings</div><div class="bdg">From last snapshot</div></div>
+  <p style="color:var(--muted);font-size:11px;margin-bottom:18px">Holdings data from Finnhub. ETF holdings coverage varies by exchange.</p>
+  <div id="etf-wrap"><div class="empty">Loading…</div></div>
+</div>
+
+<!-- ALERTS -->
+<div class="page" id="pg-alerts">
+  <div class="sh">
+    <div class="st">🔔 Alert Log</div>
+    <div class="shr">
+      <select id="af" onchange="renderAlerts()" style="background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;font-family:var(--ff);font-size:11px">
+        <option value="">All</option>
+        <option value="movement">Movements</option>
+        <option value="rating_change">Rating Changes</option>
+        <option value="news">News</option>
+        <option value="digest">Digests</option>
+        <option value="intel_run">Intel Runs</option>
+      </select>
+    </div>
+  </div>
+  <div class="af" id="alert-feed"><div class="empty">Loading…</div></div>
+</div>
+
+<!-- CONFIG -->
+<div class="page" id="pg-config">
+  <div style="background:rgba(79,158,248,.08);border:1px solid rgba(79,158,248,.10);border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:11.5px;color:var(--muted);line-height:1.7">
+    ℹ <strong style="color:var(--accent)">How config works with GitHub Actions:</strong>
+    Changes here are saved to <code>portfolio_config.json</code> in your browser's localStorage.
+    To make them permanent: copy the JSON from the "Export" button below and commit it to your repo as <code>portfolio_config.json</code>.
+    GitHub Secrets (email, API keys) are set in your repo Settings → Secrets — never stored in the file.
+  </div>
+  <div class="cg">
+    <div class="cb2" style="grid-column:1/-1">
+      <h3>📈 Portfolio Holdings — Stocks & ETFs (up to 20+)</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:10px">STOCKS — tickers: ASML.AS · SAP.DE · AAPL · etc.</div>
+          <div id="sl" class="fl"></div>
+          <button class="addb" onclick="addRow('s')">+ Add Stock</button>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:10px">ETFs — VWCE.DE · IWDA.AS · CSPX.L · etc.</div>
+          <div id="el" class="fl"></div>
+          <button class="addb" onclick="addRow('e')">+ Add ETF</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cb2">
+      <h3>⚡ Price Alerts</h3>
+      <div class="fl">
+        <div><label>Movement Alert Threshold (%)</label>
+          <input type="number" id="thr" min="0.5" max="20" step="0.5" value="3"></div>
+        <div><label>Digest Times (CET)</label>
+          <div class="stags" id="dt"></div>
+          <div class="fr"><input type="text" id="ndt" placeholder="HH:MM" style="width:90px">
+          <button class="btn bg sm" onclick="addT('d')">Add</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cb2">
+      <h3>🧠 Intelligence</h3>
+      <div class="fl">
+        <div><label>Intel Times (CET)</label>
+          <div class="stags" id="it"></div>
+          <div class="fr"><input type="text" id="nit" placeholder="HH:MM" style="width:90px">
+          <button class="btn bg sm" onclick="addT('i')">Add</button></div>
+        </div>
+        <div><label>Finnhub API Key — get free at finnhub.io</label>
+          <input type="text" id="nk" placeholder="(stored as GitHub Secret, not here)"></div>
+        <div class="fr" style="gap:10px">
+          <input type="checkbox" id="ne" checked>
+          <label style="margin:0;text-transform:none;font-size:12px">Enable news</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="cb2" style="grid-column:1/-1">
+      <h3>✉ Email (Gmail) — set via GitHub Secrets</h3>
+      <p style="color:var(--muted);font-size:11px;margin-bottom:14px;line-height:1.6">
+        Email credentials are stored as <strong style="color:var(--accent)">GitHub Secrets</strong>, not in this config file.
+        Go to your repo → Settings → Secrets and variables → Actions → New repository secret.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div class="secret-row"><span class="secret-name">EMAIL_FROM</span><span class="secret-desc">your.gmail@gmail.com</span></div>
+        <div class="secret-row"><span class="secret-name">EMAIL_PASSWORD</span><span class="secret-desc">Gmail App Password (16 chars)</span></div>
+        <div class="secret-row"><span class="secret-name">EMAIL_TO</span><span class="secret-desc">recipient@email.com</span></div>
+        <div class="secret-row"><span class="secret-name">FINNHUB_API_KEY</span><span class="secret-desc">Free at finnhub.io — 60 calls/min</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px">
+    <button class="btn bg" onclick="exportCfg()">📋 Export JSON</button>
+    <button class="btn" onclick="saveCfg()">💾 Save to Browser</button>
+  </div>
+</div>
+
+<!-- WEEKLY REPORT -->
+<div class="page" id="pg-weekly">
+  <div class="sh">
+    <div class="st" style="color:var(--lime)">📅 Weekly Report — Week Ahead</div>
+    <div class="bdg" id="wr-week-label">—</div>
+    <div class="shr">
+      <span style="color:var(--muted);font-size:11px">Generated every Saturday 09:00 CET</span>
+    </div>
+  </div>
+
+  <!-- Summary pills -->
+  <div id="wr-pills" style="margin-bottom:22px;display:flex;flex-wrap:wrap;gap:8px"></div>
+
+  <!-- Earnings -->
+  <div class="sh" style="margin-top:4px">
+    <div class="st" style="font-size:13px;color:var(--intel)">📅 Earnings Calls</div>
+    <div class="bdg" id="wr-earn-cnt">0</div>
+  </div>
+  <div class="tbox" id="wr-earnings-wrap">
+    <div class="empty">No earnings calls for your holdings next week.</div>
+  </div>
+
+  <!-- Dividends -->
+  <div class="sh">
+    <div class="st" style="font-size:13px;color:var(--up)">💰 Dividend Events</div>
+    <div class="bdg" id="wr-div-cnt">0</div>
+  </div>
+  <div class="tbox" id="wr-div-wrap">
+    <div class="empty">No dividend ex-dates or pay-dates next week.</div>
+  </div>
+
+  <!-- Splits -->
+  <div class="sh">
+    <div class="st" style="font-size:13px;color:var(--warn)">✂️ Stock Splits</div>
+    <div class="bdg" id="wr-split-cnt">0</div>
+  </div>
+  <div class="tbox" id="wr-split-wrap">
+    <div class="empty">No stock splits next week.</div>
+  </div>
+
+  <!-- IPOs -->
+  <div class="sh">
+    <div class="st" style="font-size:13px;color:var(--accent)">🚀 Market IPOs</div>
+    <div class="bdg" id="wr-ipo-cnt">0</div>
+  </div>
+  <div class="tbox" id="wr-ipo-wrap">
+    <div class="empty">No notable IPOs scheduled.</div>
+  </div>
+</div>
+
+<!-- DEPLOY GUIDE -->
+<div class="page" id="pg-deploy">
+  <div class="deploy-box">
+    <h3>🚀 How to Deploy — GitHub Actions (100% Free, Always On)</h3>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Create a GitHub repository</strong> (private recommended)<br>
+        Go to <a href="https://github.com/new" target="_blank" style="color:var(--accent)">github.com/new</a> → create a new private repo.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Upload the project files</strong> to the repo root<br>
+        Drag and drop the unzipped folder contents, or use git:
+        <pre>git init && git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
+git add . && git commit -m "Portfolio monitor"
+git push -u origin main</pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Edit your portfolio</strong> — open <code>portfolio_config.json</code> in the repo and replace the sample stocks with your own.
+        Use Yahoo Finance tickers for display; Finnhub symbols auto-converted. E.g. <code>ASML.AS</code> · <code>SAP.DE</code> · <code>AAPL</code> etc.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>Add GitHub Secrets</strong> — Settings → Secrets and variables → Actions:
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:7px">
+          <div class="secret-row"><span class="secret-name">EMAIL_FROM</span><span class="secret-desc">your.gmail@gmail.com</span></div>
+          <div class="secret-row"><span class="secret-name">EMAIL_PASSWORD</span><span class="secret-desc">Gmail App Password — Google Account → Security → 2FA → App Passwords</span></div>
+          <div class="secret-row"><span class="secret-name">EMAIL_TO</span><span class="secret-desc">Where to receive alerts</span></div>
+          <div class="secret-row"><span class="secret-name">FINNHUB_API_KEY</span><span class="secret-desc">Free at finnhub.io — 60 req/min (register in 30 s)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <strong>Enable GitHub Pages</strong> for the dashboard:<br>
+        Repo Settings → Pages → Source: <code>main</code> branch, <code>/docs</code> folder → Save.<br>
+        Your dashboard will be at: <code>https://YOUR_USER.github.io/YOUR_REPO/</code>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <strong>GitHub Actions runs automatically:</strong><br>
+        • Price digest: <strong style="color:var(--lime)">07:45 · 12:00 · 15:15 · 17:00 CET</strong> (Mon–Fri)<br>
+        • Intelligence (ratings + news): <strong style="color:var(--intel)">07:30 · 17:00 CET</strong> (Mon–Fri)<br>
+        • Trigger manually anytime: repo → Actions tab → pick workflow → Run workflow<br>
+        <br>
+        After each run, updated JSON is committed back to the repo. Reload this page to see the latest data.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <strong>Summer/Winter time note:</strong> GitHub Actions uses UTC. The workflow files use CET (UTC+1). 
+        In summer (CEST, UTC+2) you may want to adjust the cron times by 1 hour. 
+        Open <code>.github/workflows/price_digest.yml</code> and update the cron expressions.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────
+let snap    = null;
+let weeklyReport = null;
+let intel   = null;
+let alerts  = [];
+let cfg     = null;
+let dTimes  = [];
+let iTimes  = [];
+
+// Load from JSON files committed by GitHub Actions
+// When running locally (file://), fetch will fail gracefully
+async function fetchJSON(path) {
+  try {
+    const r = await fetch(path + '?t=' + Date.now());
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+let weeklyReport = null;
+
+async function reload() {
+  snap         = await fetchJSON('data/snapshot.json');
+  intel        = await fetchJSON('data/intelligence.json');
+  alerts       = await fetchJSON('data/alerts.json') || [];
+  weeklyReport = await fetchJSON('data/weekly_report.json');
+  renderDashboard();
+  renderIntel();
+  renderAlerts();
+  renderEtf();
+  renderWeekly();
+  document.getElementById('lu-time').textContent =
+    snap?.timestamp ? snap.timestamp.slice(0,16).replace('T',' ') + ' UTC' : '—';
+  toast('Data reloaded', 'inf');
+}
+
+// ── CLOCK ───────────────────────────────────────────────────────────────────
+function tick() {
+  document.getElementById('clk').textContent = new Intl.DateTimeFormat('en-GB',{
+    timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
+  }).format(new Date());
+}
+setInterval(tick,1000); tick();
+
+// ── TABS ────────────────────────────────────────────────────────────────────
+function go(id, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('pg-'+id).classList.add('on');
+  if (id==='config') loadCfg();
+  if (id==='weekly') renderWeekly();
+}
+
+// ── FORMAT ──────────────────────────────────────────────────────────────────
+const fe  = v => v!=null ? '€'+Number(v).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
+const fp  = v => v!=null ? (v>=0?'+':'')+Number(v).toFixed(2)+'%' : '—';
+const fn  = (v,d=1) => v!=null ? Number(v).toFixed(d) : '—';
+const cc  = v => v>0?'cu':v<0?'cd':'dm';
+
+function chgCell(p) {
+  const w = Math.min(Math.abs(p||0)*10,70);
+  return `<div class="cc"><span class="${cc(p)}">${fp(p)}</span><div class="cb ${p>=0?'bu':'bd'}" style="width:${w}px"></div></div>`;
+}
+function recTag(r) {
+  if(!r) return '—';
+  const c = r.includes('buy')?'tbu':r.includes('sell')?'tse':'tho';
+  return `<span class="tag ${c}">${r.replace('_',' ')}</span>`;
+}
+function rColor(r) {
+  if(!r) return 'var(--muted)';
+  r=r.toLowerCase();
+  return r.includes('buy')||r.includes('outperform')||r.includes('overweight') ? 'var(--up)' :
+         r.includes('sell')||r.includes('underperform')||r.includes('underweight') ? 'var(--dn)' : 'var(--warn)';
+}
+
+// ── DASHBOARD ───────────────────────────────────────────────────────────────
+function renderDashboard() {
+  if (!snap) {
+    ['tb-stk','tb-etf'].forEach(id=>document.getElementById(id).innerHTML=`<tr><td colspan="11" class="empty">No data yet — GitHub Actions hasn't run yet, or check the Deploy Guide tab.</td></tr>`);
+    return;
+  }
+  document.getElementById('s-tot').textContent = fe(snap.total_eur);
+  document.getElementById('s-stk').textContent = snap.stocks?.length || 0;
+  document.getElementById('s-etf').textContent = snap.etfs?.length  || 0;
+  document.getElementById('s-ts').textContent  = (snap.timestamp||'').slice(11,16) + ' UTC';
+  document.getElementById('b-stk').textContent = snap.stocks?.length || 0;
+  document.getElementById('b-etf').textContent = snap.etfs?.length  || 0;
+
+  const sRow = s => {
+    if (s.error) return `<tr><td class="tk">${s.ticker}</td><td colspan="10" class="cd">Error: ${s.error}</td></tr>`;
+    return `<tr>
+      <td class="tk">${s.ticker}</td>
+      <td class="nm" title="${s.name}">${s.name}</td>
+      <td class="mn">${fe(s.price_eur)}</td>
+      <td>${chgCell(s.change_pct)}</td>
+      <td class="dm">${s.shares}</td>
+      <td class="vl mn">${fe(s.value_eur)}</td>
+      <td>${recTag(s.recommendation)}</td>
+      <td class="dm">${s.analyst_target_mean?fe(s.analyst_target_mean):'—'}</td>
+      <td class="dm">${fn(s.pe_ratio)}</td>
+      <td class="dm">${fn(s.beta,2)}</td>
+      <td class="dm" style="font-size:11px">${s.sector||'—'}</td>
+    </tr>`;
+  };
+  const eRow = e => {
+    if (e.error) return `<tr><td class="tk">${e.ticker}</td><td colspan="7" class="cd">Error: ${e.error}</td></tr>`;
+    return `<tr>
+      <td class="tk">${e.ticker}</td>
+      <td class="nm" title="${e.name}">${e.name}</td>
+      <td class="mn">${fe(e.price_eur)}</td>
+      <td>${chgCell(e.change_pct)}</td>
+      <td class="dm">${e.shares}</td>
+      <td class="vl mn">${fe(e.value_eur)}</td>
+      <td class="dm">${fe(e['52w_low'])}</td>
+      <td class="dm">${fe(e['52w_high'])}</td>
+    </tr>`;
+  };
+  document.getElementById('tb-stk').innerHTML = snap.stocks?.length ? snap.stocks.map(sRow).join('') : `<tr><td colspan="11" class="empty">No stocks in snapshot.</td></tr>`;
+  document.getElementById('tb-etf').innerHTML = snap.etfs?.length   ? snap.etfs.map(eRow).join('')   : `<tr><td colspan="8"  class="empty">No ETFs in snapshot.</td></tr>`;
+}
+
+// ── INTELLIGENCE ─────────────────────────────────────────────────────────────
+function renderIntel() {
+  if (!intel) {
+    document.getElementById('tb-rat').innerHTML   = `<tr><td colspan="6" class="empty">No intelligence data yet.</td></tr>`;
+    document.getElementById('news-grid').innerHTML = `<div class="empty">Run intelligence via GitHub Actions to see data here.</div>`;
+    return;
+  }
+
+  // All rating changes across holdings
+  let allChanges = [];
+  for (const h of intel.holdings||[]) {
+    for (const r of h.new_ratings||[]) allChanges.push({ticker:h.ticker,...r});
+    for (const r of h.ratings||[]) {
+      if (r.from_grade && r.to_grade && r.from_grade!==r.to_grade)
+        allChanges.push({ticker:h.ticker,...r});
+    }
+  }
+  allChanges.sort((a,b)=>b.date.localeCompare(a.date));
+  const unique = []; const seen = new Set();
+  for (const c of allChanges) {
+    const k = `${c.ticker}|${c.date}|${c.firm}|${c.to_grade}`;
+    if (!seen.has(k)) { seen.add(k); unique.push(c); }
+  }
+  document.getElementById('tb-rat').innerHTML = unique.slice(0,30).map(r=>`<tr>
+    <td class="tk">${r.ticker}</td>
+    <td class="dm">${r.date}</td>
+    <td>${r.firm}</td>
+    <td style="color:var(--muted);text-decoration:line-through">${r.from_grade||'—'}</td>
+    <td style="color:${rColor(r.to_grade)};font-weight:700">→ ${r.to_grade}</td>
+    <td><span class="tag tnw">${r.action||'change'}</span></td>
+  </tr>`).join('') || `<tr><td colspan="6" class="empty">No rating changes detected today.</td></tr>`;
+
+  // News cards
+  document.getElementById('news-grid').innerHTML = (intel.holdings||[]).map(h=>{
+    const newsHtml = (h.news||[]).length
+      ? (h.news).slice(0,3).map(a=>`<div class="no">• <a href="${a.url}" target="_blank">${a.title}</a> <span style="color:var(--dim)">(${a.source})</span></div>`).join('')
+      : `<div class="no" style="color:var(--dim)">No news yet. Finnhub news runs on the intel schedule.</div>`;
+    const newRat = (h.new_ratings||[]).length
+      ? `<div class="ics">⚡ New Rating Changes</div>` + h.new_ratings.map(r=>`<div class="nr"><span style="color:var(--muted);text-decoration:line-through">${r.from_grade||'—'}</span><span>→</span><span style="color:${rColor(r.to_grade)};font-weight:700">${r.to_grade}</span><span class="dm" style="font-size:11px">${r.firm}</span></div>`).join('') : '';
+    return `<div class="ic">
+      <div class="ick">${h.ticker}</div>
+      <div class="icn">${h.name||''}</div>
+      ${newRat}
+      <div class="ics">📰 News</div>
+      ${newsHtml}
+    </div>`;
+  }).join('') || `<div class="empty">No holdings in intelligence data.</div>`;
+}
+
+// ── ETF HOLDINGS ─────────────────────────────────────────────────────────────
+function renderEtf() {
+  if (!snap?.etfs?.length) {
+    document.getElementById('etf-wrap').innerHTML = `<div class="empty">No ETF data in snapshot.</div>`;
+    return;
+  }
+  // Holdings data stored in snapshot if available
+  document.getElementById('etf-wrap').innerHTML = snap.etfs.map(e=>{
+    const h = e.holdings;
+    const tbl = h?.length ? `<div class="tbox"><table>
+      <thead><tr><th>#</th><th>Ticker</th><th>Name</th><th>Weight %</th></tr></thead>
+      <tbody>${h.map((r,i)=>`<tr><td class="dm">${i+1}</td><td class="tk">${r.ticker||'—'}</td><td class="nm">${r.name||'—'}</td><td class="dm">${r.weight_pct??'—'}%</td></tr>`).join('')}</tbody>
+    </table></div>` : `<div class="empty" style="padding:12px">ETF holdings data not available via Finnhub for this ticker.</div>`;
+    return `<div class="sh" style="margin-top:16px"><div class="st" style="font-size:13px">${e.name||e.ticker} <span class="bdg">${e.ticker}</span></div></div>${tbl}`;
+  }).join('');
+}
+
+// ── ALERTS ───────────────────────────────────────────────────────────────────
+function renderAlerts() {
+  const filter = document.getElementById('af')?.value || '';
+  let data = filter ? alerts.filter(a=>a.type===filter) : alerts;
+  document.getElementById('ac').textContent = alerts.length ? `(${alerts.length})` : '';
+  const feed = document.getElementById('alert-feed');
+  feed.innerHTML = data.length ? data.slice(0,200).map(a=>`
+    <div class="ai ${a.type}">
+      <span>${a.ticker?`<span class="atk">${a.ticker}</span>`:''}${a.message}</span>
+      <span class="ats">${a.ts||''}</span>
+    </div>`).join('') : `<div class="empty">No alerts yet.</div>`;
+}
+
+// ── CONFIG ───────────────────────────────────────────────────────────────────
+const LS_KEY = 'portfolio_cfg_v2';
+
+function loadCfg() {
+  const stored = localStorage.getItem(LS_KEY);
+  cfg = stored ? JSON.parse(stored) : {
+    portfolio:{ stocks:[], etfs:[] },
+    alerts:{ movement_threshold_pct:3, digest_times_cet:['07:45','12:00','15:15','17:00'], intel_times_cet:['07:30','17:00'] },
+    finnhub:{ api_key:'' }
+  };
+  dTimes = [...(cfg.alerts.digest_times_cet||[])];
+  iTimes = [...(cfg.alerts.intel_times_cet||[])];
+  renderRows('s', cfg.portfolio.stocks||[]);
+  renderRows('e', cfg.portfolio.etfs||[]);
+  document.getElementById('thr').value = cfg.alerts.movement_threshold_pct||3;
+  document.getElementById('ne').checked = cfg.news?.enabled!==false;
+  document.getElementById('nk').value = cfg.finnhub?.api_key||'';
+  renderTags('d', dTimes); renderTags('i', iTimes);
+}
+
+function renderRows(t, list) {
+  document.getElementById(t==='s'?'sl':'el').innerHTML = list.map((h,i)=>`
+    <div class="hr">
+      <input class="ht" type="text" placeholder="Ticker" value="${h.ticker||''}" onchange="updH('${t}',${i},'ticker',this.value)">
+      <input type="text" placeholder="Name" value="${h.name||''}" onchange="updH('${t}',${i},'name',this.value)">
+      <input class="hs" type="number" placeholder="Shares" value="${h.shares||0}" min="0" step="0.001" onchange="updH('${t}',${i},'shares',+this.value)">
+      <button class="btn sm" style="background:var(--dn);color:#fff" onclick="remH('${t}',${i})">✕</button>
+    </div>`).join('');
+}
+function addRow(t) { const k=t==='s'?'stocks':'etfs'; cfg.portfolio[k].push({ticker:'',name:'',shares:0}); renderRows(t,cfg.portfolio[k]); }
+function remH(t,i) { const k=t==='s'?'stocks':'etfs'; cfg.portfolio[k].splice(i,1); renderRows(t,cfg.portfolio[k]); }
+function updH(t,i,f,v) { const k=t==='s'?'stocks':'etfs'; cfg.portfolio[k][i][f]=v; }
+
+function renderTags(k,arr) {
+  document.getElementById(k==='d'?'dt':'it').innerHTML=arr.map((t,i)=>
+    `<div class="stag ${k==='i'?'it':''}">${t}<button onclick="remT('${k}',${i})">✕</button></div>`).join('');
+}
+function addT(k) {
+  const v=document.getElementById(k==='d'?'ndt':'nit').value.trim();
+  const a=k==='d'?dTimes:iTimes;
+  if(/^\d{2}:\d{2}$/.test(v)&&!a.includes(v)){a.push(v);a.sort();document.getElementById(k==='d'?'ndt':'nit').value='';renderTags(k,a);}
+  else toast('Enter valid HH:MM','err');
+}
+function remT(k,i){(k==='d'?dTimes:iTimes).splice(i,1);renderTags(k,k==='d'?dTimes:iTimes);}
+
+function saveCfg() {
+  cfg.alerts.movement_threshold_pct = +document.getElementById('thr').value;
+  cfg.alerts.digest_times_cet = dTimes;
+  cfg.alerts.intel_times_cet  = iTimes;
+  cfg.news.enabled    = document.getElementById('ne').checked;
+  cfg.finnhub = cfg.finnhub||{}; cfg.finnhub.api_key = document.getElementById('nk').value;
+  localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+  toast('Saved to browser. Export JSON to commit to your repo.');
+}
+
+function exportCfg() {
+  cfg.alerts.movement_threshold_pct = +document.getElementById('thr').value;
+  cfg.alerts.digest_times_cet = dTimes;
+  cfg.alerts.intel_times_cet  = iTimes;
+  const blob = new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='portfolio_config.json'; a.click();
+  toast('Config exported — commit this file to your GitHub repo');
+}
+
+
+// ── WEEKLY REPORT ─────────────────────────────────────────────────────────────
+function renderWeekly() {
+  const wr = weeklyReport;
+  if (!wr) {
+    ['wr-earnings-wrap','wr-div-wrap','wr-split-wrap','wr-ipo-wrap'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="empty">No weekly report yet — runs every Saturday 09:00 CET via GitHub Actions.</div>';
+    });
+    return;
+  }
+  const wl = document.getElementById('wr-week-label');
+  if (wl) wl.textContent = (wr.week_from||'—') + ' → ' + (wr.week_to||'—');
+
+  const earn   = wr.earnings  || {};
+  const divs   = wr.dividends || {};
+  const splits = wr.splits    || {};
+  const ipos   = wr.ipos      || [];
+  const nEarn  = Object.values(earn).flat().length;
+  const nDiv   = Object.values(divs).flat().length;
+  const nSplit = Object.values(splits).flat().length;
+  const nIpo   = ipos.length;
+
+  const setTxt = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  setTxt('wr-earn-cnt', nEarn); setTxt('wr-div-cnt', nDiv);
+  setTxt('wr-split-cnt', nSplit); setTxt('wr-ipo-cnt', nIpo);
+
+  const pillsEl = document.getElementById('wr-pills');
+  if (pillsEl) {
+    const pd = [[nEarn,'Earnings','var(--intel)'],[nDiv,'Dividends','var(--up)'],[nSplit,'Splits','var(--warn)'],[nIpo,'IPOs','var(--accent)']];
+    pillsEl.innerHTML = pd.filter(([n])=>n>0).map(([n,label,color])=>
+      `<span style="background:${color}22;border:1px solid ${color}44;color:${color};border-radius:20px;padding:5px 14px;font-size:12px"><strong>${n}</strong> ${label}</span>`
+    ).join('') || `<span style="color:var(--muted);font-size:12px">No significant events found for your holdings next week.</span>`;
+  }
+
+  const tkBadge = t => `<span style="color:var(--accent);font-weight:600;background:var(--s3);padding:2px 7px;border-radius:4px;font-size:11px">${t}</span>`;
+  const td = (v,x='') => `<td style="padding:9px 14px;border-bottom:1px solid var(--border);${x}">${v}</td>`;
+  const th = s => `<th style="padding:8px 14px;text-align:left;background:var(--s2);color:var(--muted);font-size:9.5px;text-transform:uppercase;letter-spacing:1px">${s}</th>`;
+  const tbl = (heads,rows) => `<table style="width:100%;border-collapse:collapse"><thead><tr>${heads.map(th).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  const setHtml = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
+
+  // Earnings
+  const earnFlat = Object.entries(earn).flatMap(([t,evts])=>evts.map(e=>({t,...e}))).sort((a,b)=>a.date.localeCompare(b.date));
+  const hourLbl = h => ({'bmo':'Before open','amc':'After close','dmh':'During mkt'}[h]||h||'—');
+  setHtml('wr-earnings-wrap', earnFlat.length ? tbl(
+    ['Date','Ticker','Quarter','When','EPS Est.','Revenue Est.'],
+    earnFlat.map(e=>`<tr>${td(e.date,'color:var(--muted)')}${td(tkBadge(e.t))}${td(`Q${e.quarter||'?'} ${e.year||''}`,'color:var(--muted)')}${td(hourLbl(e.hour),'color:var(--muted);font-size:11px')}${td(e.eps_estimate!=null?`$${Number(e.eps_estimate).toFixed(2)}`:'—','color:var(--lime)')}${td(e.revenue_est>1e6?`$${(e.revenue_est/1e9).toFixed(2)}B`:'—','color:var(--lime)')}</tr>`)
+  ) : '<div class="empty">No earnings calls for your holdings next week.</div>');
+
+  // Dividends
+  const divFlat = Object.entries(divs).flatMap(([t,evts])=>evts.map(d=>({t,...d}))).sort((a,b)=>(a.ex_date||'').localeCompare(b.ex_date||''));
+  setHtml('wr-div-wrap', divFlat.length ? tbl(
+    ['Ex-Date','Ticker','Amount','Currency','Record Date','Pay Date'],
+    divFlat.map(d=>`<tr>${td(d.ex_date||'—','color:var(--muted)')}${td(tkBadge(d.t))}${td(d.amount!=null?`$${Number(d.amount).toFixed(4)}`:'—','color:var(--up);font-weight:600')}${td(d.currency||'USD','color:var(--muted);font-size:11px')}${td(d.record_date||'—','color:var(--muted);font-size:11px')}${td(d.pay_date||'—','color:var(--muted);font-size:11px')}</tr>`)
+  ) : '<div class="empty">No dividend events next week.</div>');
+
+  // Splits
+  const splitFlat = Object.entries(splits).flatMap(([t,evts])=>evts.map(s=>({t,...s}))).sort((a,b)=>a.date.localeCompare(b.date));
+  setHtml('wr-split-wrap', splitFlat.length ? tbl(
+    ['Date','Ticker','Ratio'],
+    splitFlat.map(s=>`<tr>${td(s.date,'color:var(--muted)')}${td(tkBadge(s.t))}${td(s.ratio||'—','color:var(--warn);font-weight:600')}</tr>`)
+  ) : '<div class="empty">No stock splits next week.</div>');
+
+  // IPOs
+  setHtml('wr-ipo-wrap', ipos.length ? tbl(
+    ['Date','Company','Ticker','Exchange','Price','Status'],
+    [...ipos].sort((a,b)=>a.date.localeCompare(b.date)).map(i=>`<tr>${td(i.date,'color:var(--muted)')}${td(i.name||'—')}${td(tkBadge(i.ticker||'—'))}${td(i.exchange||'—','color:var(--muted);font-size:11px')}${td(i.price_range||'—','color:var(--lime)')}${td(i.status||'—','color:var(--muted);font-size:11px')}</tr>`)
+  ) : '<div class="empty">No notable IPOs scheduled.</div>');
+}
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=`toast show t${type}`;
+  setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+reload();
+</script>
+</body>
+</html>

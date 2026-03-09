@@ -1,0 +1,132 @@
+{
+  "stocks": [
+    {
+      "ticker": "MSFT",
+      "name": "Microsoft",
+      "shares": 5,
+      "isin": "US5949181045"
+    },
+    {
+      "ticker": "ENR.DE",
+      "name": "Siemens Energy",
+      "shares": 9,
+      "isin": "DE000ENER6Y0",
+      "finnhub_symbol": "XETRA:ENR"
+    },
+    {
+      "ticker": "VH2.DE",
+      "name": "Friedrich Vorwerk Group",
+      "shares": 11,
+      "isin": "DE000A255F11",
+      "finnhub_symbol": "XETRA:VH2"
+    },
+    {
+      "ticker": "MILDEF.ST",
+      "name": "MilDef Group",
+      "shares": 60,
+      "isin": "SE0016074249",
+      "finnhub_symbol": "STO:MILDEF"
+    },
+    {
+      "ticker": "GOOG",
+      "name": "Alphabet (Google) Class C",
+      "shares": 2,
+      "isin": "US02079K1079"
+    },
+    {
+      "ticker": "AIR.PA",
+      "name": "Airbus",
+      "shares": 7,
+      "isin": "NL0000235190",
+      "finnhub_symbol": "EPA:AIR"
+    },
+    {
+      "ticker": "HO.PA",
+      "name": "Thales",
+      "shares": 5,
+      "isin": "FR0000121329",
+      "finnhub_symbol": "EPA:HO"
+    },
+    {
+      "ticker": "NVDA",
+      "name": "NVIDIA",
+      "shares": 0
+    },
+    {
+      "ticker": "AMZN",
+      "name": "Amazon",
+      "shares": 0
+    },
+    {
+      "ticker": "AAPL",
+      "name": "Apple",
+      "shares": 0
+    },
+    {
+      "ticker": "GBF.DE",
+      "name": "Bilfinger",
+      "shares": 0,
+      "finnhub_symbol": "XETRA:GBF"
+    },
+    {
+      "ticker": "BA.L",
+      "name": "BAE Systems",
+      "shares": 0,
+      "finnhub_symbol": "LON:BA"
+    },
+    {
+      "ticker": "LLY",
+      "name": "Eli Lilly",
+      "shares": 0
+    },
+    {
+      "ticker": "BESI.AS",
+      "name": "BE Semiconductor (BESI)",
+      "shares": 0,
+      "finnhub_symbol": "AMS:BESI"
+    },
+    {
+      "ticker": "ASM.AS",
+      "name": "ASM International (ASMI)",
+      "shares": 0,
+      "finnhub_symbol": "AMS:ASM"
+    }
+  ],
+  "etfs": [
+    {
+      "ticker": "SPYY.DE",
+      "name": "SPDR MSCI ACWI UCITS ETF",
+      "shares": 47,
+      "isin": "IE00B44Z5B48",
+      "finnhub_symbol": "XETRA:SPYY"
+    },
+    {
+      "ticker": "EUNK.DE",
+      "name": "iShares Core MSCI Europe UCITS ETF",
+      "shares": 83,
+      "isin": "IE00B4K48X80",
+      "finnhub_symbol": "XETRA:EUNK"
+    },
+    {
+      "ticker": "QDVE.DE",
+      "name": "iShares S&P 500 IT Sector UCITS ETF",
+      "shares": 84,
+      "isin": "IE00B3WJKG14",
+      "finnhub_symbol": "XETRA:QDVE"
+    },
+    {
+      "ticker": "IS3N.DE",
+      "name": "iShares Core MSCI EM IMI UCITS ETF",
+      "shares": 18,
+      "isin": "IE00BKM4GZ66",
+      "finnhub_symbol": "XETRA:IS3N"
+    }
+  ],
+  "settings": {
+    "movement_threshold_pct": 3.0,
+    "news_lookback_hours": 24,
+    "max_news_per_ticker": 5,
+    "finnhub_api_key_env": "FINNHUB_API_KEY",
+    "currency": "EUR"
+  }
+}
