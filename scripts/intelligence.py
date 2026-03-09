@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-intelligence.py — Triggered 2× daily by GitHub Actions
+intelligence.py -- Triggered 2x daily by GitHub Actions
 ========================================================
 For every holding in the portfolio (stocks + ETFs):
 
   1. Analyst rating check (Finnhub /stock/upgrade-downgrade)
      - Fetches changes from the last 7 days.
      - Compares against ratings_history.json (persisted in the repo).
-     - If a GENUINELY NEW change is found today → sends a SEPARATE
+     - If a GENUINELY NEW change is found today -> sends a SEPARATE
        highlighted email immediately (one per ticker with new changes).
      - Stores seen rating keys so we never double-alert.
 
@@ -18,7 +18,7 @@ For every holding in the portfolio (stocks + ETFs):
        European stocks may have fewer articles.
 
 Finnhub calls per stock: 2  (upgrade-downgrade + company-news)
-With 1 s throttle: 20 stocks × 2 calls ≈ 40 s total.
+With 1 s throttle: 20 stocks x 2 calls ~ 40 s total.
 """
 
 import sys
@@ -45,7 +45,7 @@ def save_seen(seen: dict):
 
 
 def rating_key(r: dict) -> str:
-    """Unique key for a rating entry — used to detect duplicates."""
+    """Unique key for a rating entry -- used to detect duplicates."""
     return f"{r['date']}|{r['firm']}|{r['from_grade']}|{r['to_grade']}"
 
 
@@ -55,9 +55,9 @@ def is_meaningful_change(r: dict) -> bool:
     fg     = (r.get("from_grade") or "").strip().lower()
     tg     = (r.get("to_grade")   or "").strip().lower()
     if action == "reit":
-        return False                     # reiteration — skip
+        return False                     # reiteration -- skip
     if fg and tg and fg == tg:
-        return False                     # same grade — skip
+        return False                     # same grade -- skip
     return bool(tg)                      # must have a target grade
 
 
@@ -80,19 +80,19 @@ def check_ratings(ticker: str, finnhub_sym: str, name: str,
         # Only send alert for TODAY's ratings we haven't seen yet
         if r.get("date") == today and key not in seen_t and is_meaningful_change(r):
             new_changes.append(r)
-            log.info(f"    ⚡ NEW: {r['firm']} {r.get('from_grade','?')} → {r['to_grade']} ({r['action']})")
+            log.info(f"    [RATING] NEW: {r['firm']} {r.get('from_grade','?')} -> {r['to_grade']} ({r['action']})")
         seen_t[key] = True   # mark as seen regardless (avoid future re-alert)
 
     seen[ticker] = seen_t
 
     if new_changes:
         msg = " | ".join(
-            f"{c['firm']}: {c.get('from_grade','?')}→{c['to_grade']}"
+            f"{c['firm']}: {c.get('from_grade','?')}->{c['to_grade']}"
             for c in new_changes
         )
         append_alert("rating_change", ticker, msg)
         send_email(
-            f"⚡ Rating Change: {ticker} — {new_changes[0]['firm']} → {new_changes[0]['to_grade']}",
+            f"[RATING] Rating Change: {ticker} -- {new_changes[0]['firm']} -> {new_changes[0]['to_grade']}",
             rating_change_html(ticker, name, new_changes),
             cfg
         )
@@ -102,7 +102,7 @@ def check_ratings(ticker: str, finnhub_sym: str, name: str,
 
 
 def main():
-    log.info("════════ Intelligence Check (Finnhub) ════════")
+    log.info("======== Intelligence Check (Finnhub) ========")
     cfg     = load_config()
     api_key = cfg["finnhub"]["api_key"]
 
@@ -119,7 +119,7 @@ def main():
         log.info("No holdings configured.")
         return
 
-    log.info(f"Checking {len(all_holdings)} holdings…")
+    log.info(f"Checking {len(all_holdings)} holdings...")
 
     intel_data = {
         "generated": datetime.utcnow().isoformat(),
@@ -135,13 +135,13 @@ def main():
             continue
 
         finnhub_sym = h.get("finnhub_symbol") or __import__("shared").to_finnhub_symbol(ticker)
-        log.info(f"  ── {ticker}  ({finnhub_sym}) ──")
+        log.info(f"  -- {ticker}  ({finnhub_sym}) --")
 
         entry = {"ticker": ticker, "finnhub_symbol": finnhub_sym,
                  "name": name, "ratings": [], "new_ratings": [], "news": []}
 
-        # ── Call 1: Analyst ratings ────────────────────────────────────────
-        log.info("    Ratings…")
+        # -- Call 1: Analyst ratings ----------------------------------------
+        log.info("    Ratings...")
         all_ratings = check_ratings(ticker, finnhub_sym, name, seen, cfg)
         entry["ratings"]     = all_ratings[:10]    # last 10 for display
         entry["new_ratings"] = [r for r in all_ratings
@@ -149,8 +149,8 @@ def main():
                                 and is_meaningful_change(r)]
         total_new_ratings += len(entry["new_ratings"])
 
-        # ── Call 2: Company news ───────────────────────────────────────────
-        log.info("    News…")
+        # -- Call 2: Company news -------------------------------------------
+        log.info("    News...")
         news = get_company_news(finnhub_sym, api_key, news_days_back, max_news)
         entry["news"] = news
         total_news   += len(news)
@@ -159,30 +159,30 @@ def main():
         intel_data["holdings"].append(entry)
 
     save_seen(seen)
-    log.info(f"Seen-ratings saved → {RATINGS_F}")
+    log.info(f"Seen-ratings saved -> {RATINGS_F}")
 
     save_json(INTEL_F, intel_data)
-    log.info(f"Intelligence saved → {INTEL_F}")
+    log.info(f"Intelligence saved -> {INTEL_F}")
 
-    # ── Send news digest email if any articles were found ─────────────────
+    # -- Send news digest email if any articles were found -----------------
     holdings_with_news = [h for h in intel_data["holdings"] if h.get("news")]
     if holdings_with_news:
         run_label = datetime.utcnow().strftime("%H:%M UTC")
-        log.info(f"── Sending news digest ({total_news} articles) ──")
+        log.info(f"-- Sending news digest ({total_news} articles) --")
         send_email(
-            f"📰 News Digest — {run_label}",
+            f"[NEWS] News Digest -- {run_label}",
             news_digest_html(holdings_with_news, run_label),
             cfg
         )
         append_alert("news", "", f"News digest: {total_news} article(s) across {len(holdings_with_news)} holding(s)")
     else:
-        log.info("  No news articles found — skipping news email")
+        log.info("  No news articles found -- skipping news email")
 
     summary = (f"Intel run complete: {len(all_holdings)} holdings, "
                f"{total_new_ratings} new rating change(s), "
                f"{total_news} news article(s)")
     append_alert("intel_run", "", summary)
-    log.info(f"════════ {summary} ════════")
+    log.info(f"======== {summary} ========")
 
 
 if __name__ == "__main__":

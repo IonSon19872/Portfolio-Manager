@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """
-saturday_summary.py — Triggered every Saturday at 09:00 CET
+saturday_summary.py -- Triggered every Saturday at 09:00 CET
 =============================================================
 Sends one weekly roundup email covering:
 
   PAST WEEK
-  ─────────
+  ---------
   1. Portfolio total value + week-over-week change
   2. Top movers of the week (Mon open vs Fri close)
   3. Analyst rating changes from the past 5 trading days
   4. News from the past 5 days across all holdings
 
   NEXT WEEK AHEAD
-  ───────────────
-  5. 📣 Earnings reports (date, time BMO/AMC, EPS estimate, revenue estimate)
-  6. 💰 Ex-dividend dates (amount, pay date, frequency)
-  7. ✂️  Stock splits (ratio)
+  ---------------
+  5. [EARNINGS] Earnings reports (date, time BMO/AMC, EPS estimate, revenue estimate)
+  6. [DIV] Ex-dividend dates (amount, pay date, frequency)
+  7. [SPLIT]  Stock splits (ratio)
 
 Calendar data is fetched from Finnhub for EACH holding.
 Calls per holding: 2 (earnings + dividends) + 1 split check = 3
@@ -40,7 +40,7 @@ from shared import (
 WEEK_OPEN_F = DATA_DIR / "week_open.json"
 
 
-# ── Date helpers ──────────────────────────────────────────────────────────────
+# -- Date helpers --------------------------------------------------------------
 def next_weekday_range():
     """Return (next_monday_str, next_friday_str) as YYYY-MM-DD."""
     today    = date.today()
@@ -51,14 +51,14 @@ def next_weekday_range():
 
 
 def fmt_date(d: str) -> str:
-    """YYYY-MM-DD → 'Mon 10 Mar'"""
+    """YYYY-MM-DD -> 'Mon 10 Mar'"""
     try:
         return datetime.strptime(d, "%Y-%m-%d").strftime("%a %d %b")
     except Exception:
         return d
 
 
-# ── Week movers ───────────────────────────────────────────────────────────────
+# -- Week movers ---------------------------------------------------------------
 def build_week_movements(snapshot: dict, week_open: dict) -> list:
     now_map  = {s["ticker"]: s for s in
                 snapshot.get("stocks", []) + snapshot.get("etfs", [])
@@ -85,7 +85,7 @@ def build_week_movements(snapshot: dict, week_open: dict) -> list:
     return sorted(moves, key=lambda x: abs(x["move_pct"]), reverse=True)
 
 
-# ── Next-week calendar fetch ──────────────────────────────────────────────────
+# -- Next-week calendar fetch --------------------------------------------------
 def fetch_next_week_calendar(cfg: dict) -> dict:
     """
     Fetch earnings, dividends, and splits for every holding for next week.
@@ -105,7 +105,7 @@ def fetch_next_week_calendar(cfg: dict) -> dict:
     dividends_all = []
     splits_all    = []
 
-    log.info(f"  Fetching calendar data for next week: {next_mon} → {next_fri}")
+    log.info(f"  Fetching calendar data for next week: {next_mon} -> {next_fri}")
 
     for h in all_holdings:
         ticker      = (h.get("ticker") or "").strip()
@@ -116,18 +116,18 @@ def fetch_next_week_calendar(cfg: dict) -> dict:
 
         log.info(f"    {ticker} ({finnhub_sym})")
 
-        # ── Earnings (1 call) ──────────────────────────────────────────────
+        # -- Earnings (1 call) ----------------------------------------------
         earnings = get_earnings_calendar(finnhub_sym, api_key, next_mon, next_fri)
         for e in earnings:
             earnings_all.append({**e, "ticker": ticker, "name": name})
 
-        # ── Dividends (1 call) ────────────────────────────────────────────
+        # -- Dividends (1 call) --------------------------------------------
         # Dividends: look for ex-dates in next week's range
         divs = get_dividends(finnhub_sym, api_key, next_mon, next_fri)
         for d in divs:
             dividends_all.append({**d, "ticker": ticker, "name": name})
 
-        # ── Splits (1 call) ───────────────────────────────────────────────
+        # -- Splits (1 call) -----------------------------------------------
         splits = get_stock_splits(finnhub_sym, api_key, next_mon, next_fri)
         for s in splits:
             splits_all.append({**s, "ticker": ticker, "name": name})
@@ -148,36 +148,36 @@ def fetch_next_week_calendar(cfg: dict) -> dict:
     }
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# -- Main ----------------------------------------------------------------------
 def main():
-    log.info("════════ Saturday Weekly Summary ════════")
+    log.info("======== Saturday Weekly Summary ========")
     cfg = load_config()
 
     if not cfg["finnhub"]["api_key"]:
         log.error("FINNHUB_API_KEY not set.")
         sys.exit(1)
 
-    # ── Load this week's data ─────────────────────────────────────────────
+    # -- Load this week's data ---------------------------------------------
     snapshot   = load_json(SNAPSHOT_F, {"stocks": [], "etfs": [], "total_eur": 0})
     week_open  = load_json(WEEK_OPEN_F, {})
     intel_data = load_json(INTEL_F, {"holdings": []})
 
     if week_open:
         snapshot["week_start_eur"] = week_open.get("total_eur")
-        log.info(f"  Week: €{snapshot['week_start_eur']:,.2f}  →  €{snapshot['total_eur']:,.2f}")
+        log.info(f"  Week: €{snapshot['week_start_eur']:,.2f}  ->  €{snapshot['total_eur']:,.2f}")
     else:
-        log.info("  No week_open.json — week change omitted")
+        log.info("  No week_open.json -- week change omitted")
 
     week_movements = build_week_movements(snapshot, week_open) if week_open else []
     log.info(f"  {len(week_movements)} movers computed")
 
-    # ── Fetch next week's calendar ────────────────────────────────────────
-    log.info("── Fetching next-week calendar (earnings, dividends, splits) ──")
+    # -- Fetch next week's calendar ----------------------------------------
+    log.info("-- Fetching next-week calendar (earnings, dividends, splits) --")
     calendar = fetch_next_week_calendar(cfg)
     next_mon, next_fri = calendar["next_mon"], calendar["next_fri"]
 
-    # ── Build email ───────────────────────────────────────────────────────
-    log.info("── Building and sending Saturday email ──")
+    # -- Build email -------------------------------------------------------
+    log.info("-- Building and sending Saturday email --")
 
     # Past-week body
     past_html = saturday_summary_html(snapshot, intel_data, week_movements)
@@ -199,18 +199,18 @@ def main():
 
     now_label = datetime.utcnow().strftime("%d %b %Y")
     sent = send_email(
-        f"📅 Weekly Summary — {now_label}",
+        f"[WEEKLY] Weekly Summary -- {now_label}",
         combined_html,
         cfg
     )
 
     if sent:
         append_alert("weekly_summary", "",
-                     f"Weekly summary sent — {len(calendar['earnings'])} earnings, "
+                     f"Weekly summary sent -- {len(calendar['earnings'])} earnings, "
                      f"{len(calendar['dividends'])} dividends, "
                      f"{len(calendar['splits'])} splits next week")
 
-    log.info("════════ Done ════════")
+    log.info("======== Done ========")
 
 
 if __name__ == "__main__":

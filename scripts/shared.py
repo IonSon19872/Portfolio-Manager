@@ -1,18 +1,18 @@
 """
-shared.py — All data via Finnhub (free tier: 60 calls/min)
+shared.py -- All data via Finnhub (free tier: 60 calls/min)
 ============================================================
 Finnhub endpoints used:
-  /quote                    → real-time price + day change %
-  /stock/profile2           → company name, sector, currency, exchange
-  /stock/metric             → P/E, beta, 52w high/low, EPS, ROE, etc.
-  /stock/recommendation     → analyst consensus (buy/hold/sell counts)
-  /stock/price-target       → mean/high/low analyst price targets
-  /stock/upgrade-downgrade  → analyst upgrades & downgrades
-  /company-news             → company news headlines
-  /forex/rates              → live FX rates for EUR conversion
+  /quote                    -> real-time price + day change %
+  /stock/profile2           -> company name, sector, currency, exchange
+  /stock/metric             -> P/E, beta, 52w high/low, EPS, ROE, etc.
+  /stock/recommendation     -> analyst consensus (buy/hold/sell counts)
+  /stock/price-target       -> mean/high/low analyst price targets
+  /stock/upgrade-downgrade  -> analyst upgrades & downgrades
+  /company-news             -> company news headlines
+  /forex/rates              -> live FX rates for EUR conversion
 
 Rate limit: 60 calls/minute on free tier.
-→ We sleep 1 full second between EVERY Finnhub API call.
+-> We sleep 1 full second between EVERY Finnhub API call.
 
 GitHub Secret required: FINNHUB_API_KEY
 Free key at: https://finnhub.io/register  (takes 30 seconds)
@@ -33,7 +33,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("portfolio")
 
-# ── PATHS ─────────────────────────────────────────────────────────────────────
+# -- PATHS ---------------------------------------------------------------------
 ROOT       = Path(__file__).parent.parent
 CONFIG_F   = ROOT / "portfolio_config.json"
 DATA_DIR   = ROOT / "docs" / "data"
@@ -44,7 +44,7 @@ RATINGS_F  = DATA_DIR / "ratings_history.json"
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── CONFIG ────────────────────────────────────────────────────────────────────
+# -- CONFIG --------------------------------------------------------------------
 DEFAULT_CONFIG = {
     "portfolio": {"stocks": [], "etfs": []},
     "alerts": {
@@ -111,7 +111,7 @@ def save_json(path: Path, data):
     path.write_text(json.dumps(data, indent=2, default=str))
 
 
-# ── FINNHUB CLIENT ────────────────────────────────────────────────────────────
+# -- FINNHUB CLIENT ------------------------------------------------------------
 FINNHUB_BASE = "https://finnhub.io/api/v1"
 _last_call_ts = 0.0
 
@@ -134,7 +134,7 @@ def _get(endpoint: str, params: dict, api_key: str):
         if r.status_code == 200:
             return r.json()
         if r.status_code == 429:
-            log.warning("  Rate limited — sleeping 5 s")
+            log.warning("  Rate limited -- sleeping 5 s")
             time.sleep(5)
         else:
             log.warning(f"  {endpoint} HTTP {r.status_code}")
@@ -145,8 +145,8 @@ def _get(endpoint: str, params: dict, api_key: str):
         return None
 
 
-# ── FX via Finnhub ────────────────────────────────────────────────────────────
-_fx_cache: dict = {}        # currency → EUR rate, cached for the session
+# -- FX via Finnhub ------------------------------------------------------------
+_fx_cache: dict = {}        # currency -> EUR rate, cached for the session
 
 
 def _load_fx_rates(api_key: str):
@@ -171,15 +171,15 @@ def to_eur(price: float | None, currency: str, api_key: str) -> float:
         return 0.0
     _load_fx_rates(api_key)
     ccy = (currency or "USD").upper().strip()
-    if ccy == "GBX":          # pence → pounds first
+    if ccy == "GBX":          # pence -> pounds first
         price /= 100
         ccy = "GBP"
     rate = _fx_cache.get(ccy, 1.0)
     return price * rate
 
 
-# ── TICKER CONVERSION ─────────────────────────────────────────────────────────
-# Yahoo Finance suffix → Finnhub exchange prefix
+# -- TICKER CONVERSION ---------------------------------------------------------
+# Yahoo Finance suffix -> Finnhub exchange prefix
 _SUFFIX_TO_PREFIX = {
     ".AS": "AMS:", ".DE": "XETRA:", ".PA": "EPA:",  ".MI": "MIL:",
     ".L":  "LON:", ".SW": "SWX:",   ".BR": "EBR:",  ".CO": "CPH:",
@@ -191,37 +191,37 @@ _SUFFIX_TO_PREFIX = {
 def to_finnhub_symbol(yahoo_ticker: str) -> str:
     """Convert a Yahoo Finance ticker to Finnhub symbol format."""
     t = yahoo_ticker.strip()
-    # Already has exchange prefix (e.g. "AMS:ASML") — pass through
+    # Already has exchange prefix (e.g. "AMS:ASML") -- pass through
     if ":" in t:
         return t.upper()
-    # Plain US ticker — use as-is
+    # Plain US ticker -- use as-is
     if "." not in t:
         return t.upper()
-    # European: map suffix → prefix
+    # European: map suffix -> prefix
     t_upper = t.upper()
     for suffix, prefix in _SUFFIX_TO_PREFIX.items():
         if t_upper.endswith(suffix.upper()):
             base = t[:len(t)-len(suffix)].upper()
             return f"{prefix}{base}"
-    # Unknown suffix — strip it and hope for the best
+    # Unknown suffix -- strip it and hope for the best
     return t.split(".")[0].upper()
 
 
-# ── FULL STOCK DATA ───────────────────────────────────────────────────────────
+# -- FULL STOCK DATA -----------------------------------------------------------
 def get_stock_data(holding: dict, api_key: str) -> dict:
     """
     Fetch price + fundamentals + analyst data from Finnhub for one holding.
     Makes up to 5 API calls, each separated by >= 1 second.
 
     holding fields:
-      ticker          — Yahoo Finance ticker (used for display & config)
-      name            — human-readable name
-      shares          — number of shares held
-      finnhub_symbol  — (optional) override Finnhub symbol if auto-conversion fails
+      ticker          -- Yahoo Finance ticker (used for display & config)
+      name            -- human-readable name
+      shares          -- number of shares held
+      finnhub_symbol  -- (optional) override Finnhub symbol if auto-conversion fails
     """
     yahoo_ticker   = holding["ticker"]
     finnhub_sym    = holding.get("finnhub_symbol") or to_finnhub_symbol(yahoo_ticker)
-    log.info(f"  {yahoo_ticker}  →  Finnhub: {finnhub_sym}")
+    log.info(f"  {yahoo_ticker}  ->  Finnhub: {finnhub_sym}")
 
     out = {
         "ticker":         yahoo_ticker,
@@ -229,7 +229,7 @@ def get_stock_data(holding: dict, api_key: str) -> dict:
         "name":           holding.get("name", yahoo_ticker),
     }
 
-    # ── Call 1: Quote ───────────────────────────────────────────────────────
+    # -- Call 1: Quote -------------------------------------------------------
     q = _get("quote", {"symbol": finnhub_sym}, api_key)
     if not q or not q.get("c"):
         out["error"] = f"No price data from Finnhub (symbol tried: {finnhub_sym}). " \
@@ -249,7 +249,7 @@ def get_stock_data(holding: dict, api_key: str) -> dict:
         "open_today":   round(float(q.get("o", 0)), 2),
     })
 
-    # ── Call 2: Company profile ─────────────────────────────────────────────
+    # -- Call 2: Company profile ---------------------------------------------
     profile  = _get("stock/profile2", {"symbol": finnhub_sym}, api_key)
     currency = "USD"
     if profile and profile.get("name"):
@@ -271,7 +271,7 @@ def get_stock_data(holding: dict, api_key: str) -> dict:
     out["price_eur"] = round(price_eur, 2)
     out["prev_eur"]  = round(prev_eur,  2)
 
-    # ── Call 3: Metrics / fundamentals ─────────────────────────────────────
+    # -- Call 3: Metrics / fundamentals -------------------------------------
     met = _get("stock/metric", {"symbol": finnhub_sym, "metric": "all"}, api_key)
     if met and "metric" in met:
         m = met["metric"]
@@ -287,7 +287,7 @@ def get_stock_data(holding: dict, api_key: str) -> dict:
             "roe":            m.get("roeTTM"),
         })
 
-    # ── Call 4: Analyst recommendation consensus ────────────────────────────
+    # -- Call 4: Analyst recommendation consensus ----------------------------
     rec = _get("stock/recommendation", {"symbol": finnhub_sym}, api_key)
     if rec and isinstance(rec, list) and rec:
         latest = rec[0]
@@ -308,7 +308,7 @@ def get_stock_data(holding: dict, api_key: str) -> dict:
             "rec_period":     latest.get("period", ""),
         })
 
-    # ── Call 5: Price target ────────────────────────────────────────────────
+    # -- Call 5: Price target ------------------------------------------------
     pt = _get("stock/price-target", {"symbol": finnhub_sym}, api_key)
     if pt and pt.get("targetMean"):
         out.update({
@@ -322,7 +322,7 @@ def get_stock_data(holding: dict, api_key: str) -> dict:
     return out
 
 
-# ── ANALYST UPGRADES / DOWNGRADES ─────────────────────────────────────────────
+# -- ANALYST UPGRADES / DOWNGRADES ---------------------------------------------
 def get_analyst_upgrades(finnhub_sym: str, api_key: str, days_back: int = 7) -> list:
     """Fetch recent analyst rating changes from Finnhub."""
     from_date = (date.today() - timedelta(days=days_back)).isoformat()
@@ -344,7 +344,7 @@ def get_analyst_upgrades(finnhub_sym: str, api_key: str, days_back: int = 7) -> 
     ]
 
 
-# ── COMPANY NEWS ──────────────────────────────────────────────────────────────
+# -- COMPANY NEWS --------------------------------------------------------------
 def get_company_news(finnhub_sym: str, api_key: str,
                      days_back: int = 1, max_articles: int = 3) -> list:
     """
@@ -377,7 +377,7 @@ def get_company_news(finnhub_sym: str, api_key: str,
     return results
 
 
-# ── EMAIL ─────────────────────────────────────────────────────────────────────
+# -- EMAIL ---------------------------------------------------------------------
 def send_email(subject: str, html: str, cfg: dict) -> bool:
     a = cfg["alerts"]
     if not a.get("email_enabled") or not a.get("email_from") or not a.get("email_password"):
@@ -392,14 +392,14 @@ def send_email(subject: str, html: str, cfg: dict) -> bool:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=20) as s:
             s.login(a["email_from"], a["email_password"])
             s.send_message(msg)
-        log.info(f"  ✉ Sent: {subject}")
+        log.info(f"  [EMAIL] Sent: {subject}")
         return True
     except Exception as e:
-        log.error(f"  ✗ Email failed: {e}")
+        log.error(f"  [FAIL] Email failed: {e}")
         return False
 
 
-# ── ALERT LOG ─────────────────────────────────────────────────────────────────
+# -- ALERT LOG -----------------------------------------------------------------
 def append_alert(alert_type: str, ticker: str, message: str):
     alerts = load_json(ALERTS_F, [])
     alerts.insert(0, {
@@ -411,7 +411,7 @@ def append_alert(alert_type: str, ticker: str, message: str):
     save_json(ALERTS_F, alerts[:500])
 
 
-# ── EMAIL HTML TEMPLATES ──────────────────────────────────────────────────────
+# -- EMAIL HTML TEMPLATES ------------------------------------------------------
 _BASE = ("font-family:'Arial',sans-serif;background:#161b22;"
          "color:#f0f2f5;padding:32px;max-width:680px;margin:auto;border-radius:12px")
 _TH   = lambda s: (f"<th style='padding:8px 12px;text-align:left;background:#1c2330;"
@@ -424,17 +424,17 @@ _BG_ROW    = "#1c2330"   # alternate / header row
 _BORDER    = "#30384a"   # row dividers
 _TEXT      = "#f0f2f5"   # primary text
 _MUTED     = "#7d8fa8"   # secondary / label text
-_ACCENT    = "#4f9ef8"   # amber — tickers, links, highlights
-_UP        = "#52d68a"   # green — gains
-_DN        = "#f56565"   # soft red — losses
-_WARN      = "#f6ad55"   # yellow — warnings, EPS
-_INTEL     = "#b794f4"   # lavender — ratings, intelligence
+_ACCENT    = "#4f9ef8"   # amber -- tickers, links, highlights
+_UP        = "#52d68a"   # green -- gains
+_DN        = "#f56565"   # soft red -- losses
+_WARN      = "#f6ad55"   # yellow -- warnings, EPS
+_INTEL     = "#b794f4"   # lavender -- ratings, intelligence
 
 
 def _holding_row(s: dict) -> str:
     chg   = s.get("change_pct", 0) or 0
     color = "#52d68a" if chg >= 0 else "#f56565"
-    arrow = "▲" if chg >= 0 else "▼"
+    arrow = "^" if chg >= 0 else "v"
     rec   = (s.get("recommendation") or "").replace("_", " ")
     rc    = "#52d68a" if "buy" in rec else "#f56565" if "sell" in rec else "#f6ad55"
     counts = ""
@@ -455,15 +455,15 @@ def _holding_row(s: dict) -> str:
 def _holding_row(s: dict) -> str:
     chg   = s.get("change_pct", 0) or 0
     color = "#52d68a" if chg >= 0 else "#f56565"
-    arrow = "▲" if chg >= 0 else "▼"
+    arrow = "^" if chg >= 0 else "v"
     rec   = (s.get("recommendation") or "").replace("_", " ")
     rc    = "#52d68a" if "buy" in rec else "#f56565" if "sell" in rec else "#f6ad55"
     counts = ""
     if s.get("analyst_total"):
         counts = f"B:{s.get('analyst_buy',0)} H:{s.get('analyst_hold',0)} S:{s.get('analyst_sell',0)}"
     td = lambda v, x="": f"<td style='padding:8px 12px;border-bottom:1px solid #21293a;{x}'>{v}</td>"
-    p_eur = s.get("price_eur", "—")
-    v_eur = s.get("value_eur", "—")
+    p_eur = s.get("price_eur", "--")
+    v_eur = s.get("value_eur", "--")
     return (f"<tr>"
             f"{td(s['ticker'], 'color:#4f9ef8;font-weight:600')}"
             f"{td((s.get('name') or '')[:26], 'color:#7d8fa8')}"
@@ -486,15 +486,15 @@ def digest_html(snapshot: dict, label: str) -> str:
     total    = snapshot.get("total_eur", 0)
     stk_rows = "".join(_holding_row(s) for s in snapshot.get("stocks", []) if "error" not in s)
     etf_rows = "".join(_holding_row(e) for e in snapshot.get("etfs",   []) if "error" not in e)
-    now      = datetime.utcnow().strftime("%A, %d %B %Y · %H:%M UTC")
+    now      = datetime.utcnow().strftime("%A, %d %B %Y * %H:%M UTC")
     return (f"<div style='{_BASE}'>"
-            f"<div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px'>Portfolio Digest · Finnhub</div>"
-            f"<h1 style='font-size:20px;color:#4f9ef8;margin:0 0 4px'>📊 {label}</h1>"
+            f"<div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px'>Portfolio Digest * Finnhub</div>"
+            f"<h1 style='font-size:20px;color:#4f9ef8;margin:0 0 4px'>[DIGEST] {label}</h1>"
             f"<p style='color:#7d8fa8;margin:0 0 20px'>{now}</p>"
             f"<p style='font-size:24px;color:#52d68a;margin:0 0 24px'>Total: <strong>€{total:,.2f}</strong></p>"
-            f"<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>📈 Stocks</h2>{_table(stk_rows)}"
-            f"<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 10px'>🗂 ETFs</h2>{_table(etf_rows)}"
-            f"<p style='color:#4a5568;font-size:10px;margin-top:24px'>Portfolio Intelligence · GitHub Actions · Finnhub.io</p>"
+            f"<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>[CHART] Stocks</h2>{_table(stk_rows)}"
+            f"<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 10px'>[ETF] ETFs</h2>{_table(etf_rows)}"
+            f"<p style='color:#4a5568;font-size:10px;margin-top:24px'>Portfolio Intelligence * GitHub Actions * Finnhub.io</p>"
             f"</div>")
 
 
@@ -502,11 +502,11 @@ def movement_html(ticker: str, name: str, price_now: float,
                   price_prev: float, move_pct: float) -> str:
     up    = move_pct > 0
     color = "#52d68a" if up else "#f56565"
-    arrow = "🔺" if up else "🔻"
+    arrow = "(UP)" if up else "(DOWN)"
     now   = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     return (f"<div style='{_BASE}'>"
             f"<div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;"
-            f"letter-spacing:2px;margin-bottom:6px'>Movement Alert · Finnhub</div>"
+            f"letter-spacing:2px;margin-bottom:6px'>Movement Alert * Finnhub</div>"
             f"<h1 style='font-size:26px;color:{color};margin:0 0 8px'>{arrow} {ticker}</h1>"
             f"<p style='color:#7d8fa8;margin:0 0 20px'>{name}</p>"
             f"<table style='width:100%;border-collapse:collapse;background:#1c2330;border-radius:8px;overflow:hidden'>"
@@ -529,17 +529,17 @@ def rating_change_html(ticker: str, name: str, changes: list) -> str:
         col  = ("#52d68a" if any(w in tl for w in ["buy","outperform","overweight","positive"])
                 else "#f56565" if any(w in tl for w in ["sell","underperform","underweight","negative"])
                 else "#f6ad55")
-        badge = {"up":   "<span style='color:#52d68a;font-size:10px'>▲ UPGRADE</span>",
-                 "down": "<span style='color:#f56565;font-size:10px'>▼ DOWNGRADE</span>",
-                 "init": "<span style='color:#4f9ef8;font-size:10px'>● INITIATION</span>",
-                 "reit": "<span style='color:#7d8fa8;font-size:10px'>— REITERATE</span>",
+        badge = {"up":   "<span style='color:#52d68a;font-size:10px'>^ UPGRADE</span>",
+                 "down": "<span style='color:#f56565;font-size:10px'>v DOWNGRADE</span>",
+                 "init": "<span style='color:#4f9ef8;font-size:10px'>* INITIATION</span>",
+                 "reit": "<span style='color:#7d8fa8;font-size:10px'>-- REITERATE</span>",
                  }.get(c.get("action","").lower(), "")
         bd = "1px solid #21293a"
         return (f"<tr>"
                 f"<td style='padding:9px 12px;border-bottom:{bd};color:#7d8fa8'>{c.get('date','')}</td>"
                 f"<td style='padding:9px 12px;border-bottom:{bd};font-weight:600'>{c.get('firm','')}</td>"
-                f"<td style='padding:9px 12px;border-bottom:{bd};color:#7d8fa8;text-decoration:line-through'>{c.get('from_grade','') or '—'}</td>"
-                f"<td style='padding:9px 12px;border-bottom:{bd}'>→</td>"
+                f"<td style='padding:9px 12px;border-bottom:{bd};color:#7d8fa8;text-decoration:line-through'>{c.get('from_grade','') or '--'}</td>"
+                f"<td style='padding:9px 12px;border-bottom:{bd}'>-></td>"
                 f"<td style='padding:9px 12px;border-bottom:{bd};color:{col};font-weight:700;font-size:15px'>{to_g}</td>"
                 f"<td style='padding:9px 12px;border-bottom:{bd}'>{badge}</td>"
                 f"</tr>")
@@ -548,7 +548,7 @@ def rating_change_html(ticker: str, name: str, changes: list) -> str:
     heads = "".join(_TH(h) for h in ["Date","Firm","From","","To","Action"])
     return (f"<div style='{_BASE}'>"
             f"<div style='font-size:10px;color:#b794f4;text-transform:uppercase;"
-            f"letter-spacing:2px;margin-bottom:6px'>⚡ Analyst Rating Change · Finnhub</div>"
+            f"letter-spacing:2px;margin-bottom:6px'>[RATING] Analyst Rating Change * Finnhub</div>"
             f"<h1 style='font-size:24px;color:#b794f4;margin:0 0 6px'>{ticker}</h1>"
             f"<p style='color:#7d8fa8;margin:0 0 24px'>{name}</p>"
             f"<table style='width:100%;border-collapse:collapse;background:#1c2330;border-radius:8px;overflow:hidden'>"
@@ -566,7 +566,7 @@ def news_digest_html(holdings_with_news: list, run_label: str) -> str:
     holdings_with_news: list of {ticker, name, news: [{title, source, url, date, summary}]}
     Only holdings that actually have news are included.
     """
-    now = datetime.utcnow().strftime("%A, %d %B %Y · %H:%M UTC")
+    now = datetime.utcnow().strftime("%A, %d %B %Y * %H:%M UTC")
 
     def _news_section(h: dict) -> str:
         articles = h.get("news", [])
@@ -577,8 +577,8 @@ def news_digest_html(holdings_with_news: list, run_label: str) -> str:
             src  = a.get("source", "")
             date_str = a.get("date", "")
             summ = (a.get("summary") or "")[:160]
-            if summ and not summ.endswith((".", "…")):
-                summ += "…"
+            if summ and not summ.endswith((".", "...")):
+                summ += "..."
             url  = a.get("url", "#")
             title = a.get("title", "")
             rows += (
@@ -588,7 +588,7 @@ def news_digest_html(holdings_with_news: list, run_label: str) -> str:
                 f"  font-size:12.5px;line-height:1.5;display:block;margin-bottom:5px'>{title}</a>"
                 f"  <div style='color:#7d8fa8;font-size:11px;margin-bottom:4px'>"
                 f"    <span style='color:#52d68a'>{src}</span>"
-                f"    {' · ' + date_str if date_str else ''}"
+                f"    {' * ' + date_str if date_str else ''}"
                 f"  </div>"
                 f"  {f'<div style=\"color:#7d8fa8;font-size:11px;line-height:1.6\">{summ}</div>' if summ else ''}"
                 f"</td>"
@@ -611,14 +611,14 @@ def news_digest_html(holdings_with_news: list, run_label: str) -> str:
     return (
         f"<div style='{_BASE}'>"
         f"<div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;"
-        f"letter-spacing:2px;margin-bottom:6px'>News Digest · Finnhub</div>"
-        f"<h1 style='font-size:20px;color:#52d68a;margin:0 0 4px'>📰 News Digest · {run_label}</h1>"
+        f"letter-spacing:2px;margin-bottom:6px'>News Digest * Finnhub</div>"
+        f"<h1 style='font-size:20px;color:#52d68a;margin:0 0 4px'>[NEWS] News Digest * {run_label}</h1>"
         f"<p style='color:#7d8fa8;margin:0 0 6px'>{now}</p>"
         f"<p style='color:#7d8fa8;font-size:11px;margin:0 0 24px'>"
         f"{total_articles} article(s) across {len(holdings_with_news)} holding(s)</p>"
         f"{sections}"
         f"<p style='color:#4a5568;font-size:10px;margin-top:16px'>"
-        f"Portfolio Intelligence · GitHub Actions · Finnhub.io</p>"
+        f"Portfolio Intelligence * GitHub Actions * Finnhub.io</p>"
         f"</div>"
     )
 
@@ -633,14 +633,14 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
       - All analyst rating changes from the past 5 days
       - All news from the past 5 days grouped by holding
     """
-    now        = datetime.utcnow().strftime("%A, %d %B %Y · %H:%M UTC")
+    now        = datetime.utcnow().strftime("%A, %d %B %Y * %H:%M UTC")
     total_eur  = snapshot.get("total_eur", 0)
     week_start = snapshot.get("week_start_eur")  # set by Saturday script
     week_chg   = ((total_eur - week_start) / week_start * 100) if week_start else None
     chg_color  = "#52d68a" if (week_chg or 0) >= 0 else "#f56565"
-    chg_arrow  = "▲" if (week_chg or 0) >= 0 else "▼"
+    chg_arrow  = "^" if (week_chg or 0) >= 0 else "v"
 
-    # ── Week-over-week value ──────────────────────────────────────────────────
+    # -- Week-over-week value --------------------------------------------------
     week_block = (
         f"<div style='background:#1c2330;border-radius:10px;padding:20px 24px;"
         f"margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px'>"
@@ -653,7 +653,7 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
         f"</div>"
     )
 
-    # ── Top movers ────────────────────────────────────────────────────────────
+    # -- Top movers ------------------------------------------------------------
     movers_block = ""
     if week_movements:
         top = sorted(week_movements, key=lambda x: abs(x.get("move_pct", 0)), reverse=True)[:8]
@@ -661,7 +661,7 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
         for m in top:
             mp    = m.get("move_pct", 0)
             col   = "#52d68a" if mp >= 0 else "#f56565"
-            arrow = "▲" if mp >= 0 else "▼"
+            arrow = "^" if mp >= 0 else "v"
             rows += (
                 f"<tr>"
                 f"<td style='padding:9px 14px;border-bottom:1px solid #21293a;"
@@ -682,13 +682,13 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
             for h in ["Ticker", "Name", "Mon Open", "Fri Close", "Week Chg"]
         )
         movers_block = (
-            f"<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>📊 Top Movers This Week</h2>"
+            f"<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>[DIGEST] Top Movers This Week</h2>"
             f"<table style='width:100%;border-collapse:collapse;background:#1c2330;"
             f"border-radius:8px;overflow:hidden;margin-bottom:24px'>"
             f"<thead><tr>{heads}</tr></thead><tbody>{rows}</tbody></table>"
         )
 
-    # ── Rating changes this week ──────────────────────────────────────────────
+    # -- Rating changes this week ----------------------------------------------
     ratings_block = ""
     all_changes = []
     for h in (intel_data.get("holdings") or []):
@@ -712,7 +712,7 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
             col  = ("#52d68a" if any(w in tl for w in ["buy","outperform","overweight"])
                     else "#f56565" if any(w in tl for w in ["sell","underperform","underweight"])
                     else "#f6ad55")
-            act_map = {"up": "▲ UPGRADE", "down": "▼ DOWN", "init": "● INIT", "reit": "—"}
+            act_map = {"up": "^ UPGRADE", "down": "v DOWN", "init": "* INIT", "reit": "--"}
             act_label = act_map.get(c.get("action","").lower(), c.get("action",""))
             act_col   = {"up":"#52d68a","down":"#f56565","init":"#4f9ef8"}.get(
                 c.get("action","").lower(), "#7d8fa8")
@@ -721,8 +721,8 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
                     f"<td style='padding:8px 12px;border-bottom:{bd};color:#4f9ef8;font-weight:600'>{c.get('ticker','')}</td>"
                     f"<td style='padding:8px 12px;border-bottom:{bd};color:#7d8fa8'>{c.get('date','')}</td>"
                     f"<td style='padding:8px 12px;border-bottom:{bd}'>{c.get('firm','')}</td>"
-                    f"<td style='padding:8px 12px;border-bottom:{bd};color:#7d8fa8;text-decoration:line-through'>{c.get('from_grade','') or '—'}</td>"
-                    f"<td style='padding:8px 12px;border-bottom:{bd}'>→</td>"
+                    f"<td style='padding:8px 12px;border-bottom:{bd};color:#7d8fa8;text-decoration:line-through'>{c.get('from_grade','') or '--'}</td>"
+                    f"<td style='padding:8px 12px;border-bottom:{bd}'>-></td>"
                     f"<td style='padding:8px 12px;border-bottom:{bd};color:{col};font-weight:700'>{to_g}</td>"
                     f"<td style='padding:8px 12px;border-bottom:{bd};color:{act_col};font-size:10px'>{act_label}</td>"
                     f"</tr>")
@@ -732,14 +732,14 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
             for h in ["Ticker","Date","Firm","From","","To","Action"]
         )
         ratings_block = (
-            f"<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>⚡ Rating Changes This Week</h2>"
+            f"<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>[RATING] Rating Changes This Week</h2>"
             f"<table style='width:100%;border-collapse:collapse;background:#1c2330;"
             f"border-radius:8px;overflow:hidden;margin-bottom:24px'>"
             f"<thead><tr>{rc_heads}</tr></thead>"
             f"<tbody>{''.join(_rc_row(c) for c in week_changes)}</tbody></table>"
         )
 
-    # ── News this week ────────────────────────────────────────────────────────
+    # -- News this week --------------------------------------------------------
     news_sections = ""
     for h in (intel_data.get("holdings") or []):
         articles = [a for a in (h.get("news") or [])
@@ -758,8 +758,8 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
                 f"<a href='{url}' style='color:#4f9ef8;text-decoration:none;font-weight:600;"
                 f"font-size:12px;display:block;margin-bottom:4px'>{title}</a>"
                 f"<span style='color:#52d68a;font-size:10px'>{src}</span>"
-                f"<span style='color:#7d8fa8;font-size:10px'>{' · '+dt if dt else ''}</span>"
-                f"{'<div style=\"color:#7d8fa8;font-size:11px;margin-top:3px\">'+summ+'…</div>' if summ else ''}"
+                f"<span style='color:#7d8fa8;font-size:10px'>{' * '+dt if dt else ''}</span>"
+                f"{'<div style=\"color:#7d8fa8;font-size:11px;margin-top:3px\">'+summ+'...</div>' if summ else ''}"
                 f"</td></tr>"
             )
         news_sections += (
@@ -774,22 +774,22 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
         )
     if news_sections:
         news_sections = (
-            f"<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 12px'>📰 News This Week</h2>"
+            f"<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 12px'>[NEWS] News This Week</h2>"
             + news_sections
         )
 
     return (
         f"<div style='{_BASE}'>"
         f"<div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;"
-        f"letter-spacing:2px;margin-bottom:6px'>Weekly Summary · Finnhub</div>"
-        f"<h1 style='font-size:20px;color:#f6ad55;margin:0 0 4px'>📅 Weekly Summary</h1>"
+        f"letter-spacing:2px;margin-bottom:6px'>Weekly Summary * Finnhub</div>"
+        f"<h1 style='font-size:20px;color:#f6ad55;margin:0 0 4px'>[WEEKLY] Weekly Summary</h1>"
         f"<p style='color:#7d8fa8;margin:0 0 24px'>{now}</p>"
         f"{week_block}"
         f"{movers_block}"
         f"{ratings_block}"
         f"{news_sections}"
         f"<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
-        f"Portfolio Intelligence · GitHub Actions · Finnhub.io</p>"
+        f"Portfolio Intelligence * GitHub Actions * Finnhub.io</p>"
         f"</div>"
     )
 
@@ -807,7 +807,7 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
     }
     All lists are already sorted by date.
     """
-    # ── Helpers ───────────────────────────────────────────────────────────────
+    # -- Helpers ---------------------------------------------------------------
     TH = lambda s: (f"<th style='padding:8px 12px;text-align:left;background:#1c2330;"
                     f"color:#7d8fa8;font-size:10px;text-transform:uppercase;"
                     f"letter-spacing:1px'>{s}</th>")
@@ -825,19 +825,19 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
     BD = "border-bottom:1px solid #21293a"
     td = lambda v, x="": f"<td style='padding:9px 12px;{BD};{x}'>{v}</td>"
 
-    # ── Earnings ──────────────────────────────────────────────────────────────
+    # -- Earnings --------------------------------------------------------------
     earnings_block = ""
     earnings = calendar.get("earnings", [])
     if earnings:
         hour_label = {"bmo": "Before Open", "amc": "After Close", "dmh": "During Market"}
         rows = ""
         for e in earnings:
-            hl   = hour_label.get((e.get("hour") or "").lower(), e.get("hour","") or "—")
-            eps  = f"${e['eps_estimate']:.2f}" if e.get("eps_estimate") is not None else "—"
+            hl   = hour_label.get((e.get("hour") or "").lower(), e.get("hour","") or "--")
+            eps  = f"${e['eps_estimate']:.2f}" if e.get("eps_estimate") is not None else "--"
             rev  = (f"${e['revenue_est']/1e9:.1f}B"
-                    if e.get("revenue_est") and e["revenue_est"] > 1e6 else "—")
+                    if e.get("revenue_est") and e["revenue_est"] > 1e6 else "--")
             qtr  = (f"Q{e.get('quarter')} {e.get('year','')}"
-                    if e.get("quarter") else "—")
+                    if e.get("quarter") else "--")
             rows += (f"<tr>"
                      f"{td(e.get('date',''), 'color:#7d8fa8')}"
                      f"{td(e.get('ticker',''), 'color:#4f9ef8;font-weight:600')}"
@@ -848,32 +848,32 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
                      f"{td(rev, 'color:#7d8fa8')}"
                      f"</tr>")
         earnings_block = _section(
-            "📣 Earnings Reports Next Week", "#f6ad55", rows,
+            "[EARNINGS] Earnings Reports Next Week", "#f6ad55", rows,
             ["Date", "Ticker", "Company", "Quarter", "Time", "EPS Est.", "Rev Est."]
         )
 
-    # ── Dividends ─────────────────────────────────────────────────────────────
+    # -- Dividends -------------------------------------------------------------
     dividends_block = ""
     dividends = calendar.get("dividends", [])
     if dividends:
         rows = ""
         for d in dividends:
             amt  = (f"{d.get('currency','')} {d['amount']:.4f}"
-                    if d.get("amount") is not None else "—")
+                    if d.get("amount") is not None else "--")
             rows += (f"<tr>"
                      f"{td(d.get('ex_date',''), 'color:#7d8fa8')}"
                      f"{td(d.get('ticker',''), 'color:#4f9ef8;font-weight:600')}"
                      f"{td(d.get('name','')[:22], 'color:#7d8fa8')}"
                      f"{td(amt, 'color:#52d68a')}"
-                     f"{td(d.get('pay_date','') or '—', 'color:#7d8fa8')}"
-                     f"{td((d.get('freq') or '—').title(), 'color:#7d8fa8;font-size:11px')}"
+                     f"{td(d.get('pay_date','') or '--', 'color:#7d8fa8')}"
+                     f"{td((d.get('freq') or '--').title(), 'color:#7d8fa8;font-size:11px')}"
                      f"</tr>")
         dividends_block = _section(
-            "💰 Ex-Dividend Dates Next Week", "#52d68a", rows,
+            "[DIV] Ex-Dividend Dates Next Week", "#52d68a", rows,
             ["Ex-Date", "Ticker", "Company", "Amount", "Pay Date", "Frequency"]
         )
 
-    # ── Stock splits ──────────────────────────────────────────────────────────
+    # -- Stock splits ----------------------------------------------------------
     splits_block = ""
     splits = calendar.get("splits", [])
     if splits:
@@ -883,32 +883,32 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
                      f"{td(s.get('date',''), 'color:#7d8fa8')}"
                      f"{td(s.get('ticker',''), 'color:#4f9ef8;font-weight:600')}"
                      f"{td(s.get('name','')[:22], 'color:#7d8fa8')}"
-                     f"{td(s.get('ratio','—'), 'color:#b794f4;font-weight:600')}"
+                     f"{td(s.get('ratio','--'), 'color:#b794f4;font-weight:600')}"
                      f"</tr>")
         splits_block = _section(
-            "✂️ Stock Splits Next Week", "#b794f4", rows,
+            "[SPLIT] Stock Splits Next Week", "#b794f4", rows,
             ["Date", "Ticker", "Company", "Ratio"]
         )
 
-    # ── Empty state ───────────────────────────────────────────────────────────
+    # -- Empty state -----------------------------------------------------------
     if not earnings and not dividends and not splits:
         body = (f"<div style='background:#1c2330;border-radius:8px;padding:18px 20px;"
                 f"color:#7d8fa8;font-size:12px;margin-bottom:24px'>"
                 f"No earnings, dividends, or splits scheduled for your holdings "
-                f"next week ({next_mon} – {next_fri}).</div>")
+                f"next week ({next_mon} - {next_fri}).</div>")
     else:
         body = earnings_block + dividends_block + splits_block
 
     return (
         f"<h2 style='font-size:15px;color:#f0f2f5;margin:0 0 4px'>"
-        f"🗓 Next Week's Important Dates</h2>"
+        f"[CAL] Next Week's Important Dates</h2>"
         f"<p style='color:#7d8fa8;font-size:11px;margin:0 0 16px'>"
-        f"{next_mon} – {next_fri}</p>"
+        f"{next_mon} - {next_fri}</p>"
         f"{body}"
     )
 
 
-# ── CALENDAR DATA (weekly report) ─────────────────────────────────────────────
+# -- CALENDAR DATA (weekly report) ---------------------------------------------
 
 def get_earnings_calendar(finnhub_sym: str, api_key: str,
                           from_date: str, to_date: str) -> list:
