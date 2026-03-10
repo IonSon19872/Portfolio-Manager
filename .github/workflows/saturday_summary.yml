@@ -25,14 +25,13 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install requests yfinance
 
       - name: Run Saturday summary
         env:
           EMAIL_FROM:        ${{ secrets.EMAIL_FROM }}
           EMAIL_PASSWORD:    ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_TO:          ${{ secrets.EMAIL_TO }}
-          FINNHUB_API_KEY:   ${{ secrets.FINNHUB_API_KEY }}
         run: python scripts/saturday_summary.py
 
       - name: Commit updated alerts log
