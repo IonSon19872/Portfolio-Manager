@@ -14,10 +14,10 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent))
 from shared import (
     load_config, save_config, save_json, load_json,
-    SNAPSHOT_F, DATA_DIR,
-    get_stock_data,
+    SNAPSHOT_F, INTEL_F, DATA_DIR,
+    get_stock_data, get_company_news,
     append_alert, send_email,
-    digest_html, movement_html, log
+    digest_html, news_digest_html, movement_html, _BASE, log
 )
 
 WEEK_OPEN_F = DATA_DIR / "week_open.json"
@@ -67,11 +67,15 @@ def build_snapshot(cfg: dict) -> dict:
     return snapshot
 
 
-def check_movements(snapshot: dict, cfg: dict) -> int:
+def check_movements_and_ratings(snapshot: dict, cfg: dict) -> int:
     threshold   = cfg["alerts"].get("movement_threshold_pct", 3.0)
     last_prices = cfg.get("last_prices", {})
-    alerts_sent = 0
+    intel_data  = load_json(INTEL_F, {"holdings": []})
 
+    movement_alerts = []
+    rating_alerts   = []
+
+    # --- Price movements ---
     for item in snapshot["stocks"] + snapshot["etfs"]:
         if "error" in item or not item.get("price_eur"):
             continue
@@ -84,25 +88,144 @@ def check_movements(snapshot: dict, cfg: dict) -> int:
             if abs(move) >= threshold:
                 direction = "UP" if move > 0 else "DOWN"
                 msg = (
-                    ticker + " moved " + direction + " " +
+                    ticker + " " + direction + " " +
                     "{:.1f}".format(abs(move)) + "% " +
                     "(EUR " + "{:.2f}".format(prev) +
                     " -> EUR " + "{:.2f}".format(price_now) + ")"
                 )
-                log.info("  ALERT: " + msg)
+                log.info("  MOVE: " + msg)
                 append_alert("movement", ticker, msg)
-                send_email(
-                    "[ALERT] " + ticker + " " + direction + " " + "{:.1f}".format(abs(move)) + "%",
-                    movement_html(ticker, item.get("name", ticker), price_now, prev, move),
-                    cfg
-                )
-                alerts_sent += 1
+                movement_alerts.append({
+                    "ticker":    ticker,
+                    "name":      item.get("name", ticker),
+                    "price_now": price_now,
+                    "price_prev": prev,
+                    "move_pct":  move,
+                    "direction": direction,
+                })
 
         last_prices[ticker] = price_now
 
+    # --- Analyst rating changes (from latest intelligence run) ---
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    for h in intel_data.get("holdings", []):
+        for r in h.get("new_ratings", []):
+            if r.get("date", "") == today:
+                rating_alerts.append({
+                    "ticker":     h["ticker"],
+                    "name":       h.get("name", h["ticker"]),
+                    "firm":       r.get("firm", ""),
+                    "from_grade": r.get("from_grade", ""),
+                    "to_grade":   r.get("to_grade", ""),
+                    "action":     r.get("action", ""),
+                })
+                log.info(
+                    "  RATING: " + h["ticker"] + " " +
+                    r.get("firm", "") + " -> " + r.get("to_grade", "")
+                )
+
     cfg["last_prices"] = last_prices
     save_config(cfg)
-    return alerts_sent
+
+    if not movement_alerts and not rating_alerts:
+        log.info("  Nothing to alert")
+        return 0
+
+    # --- Build combined alert email ---
+    now  = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    html = "<div style='" + _BASE + "'>"
+    html += (
+        "<h1 style='font-size:20px;color:#FFBF00;margin:0 0 4px'>Portfolio Alerts</h1>"
+        "<p style='color:#7d8fa8;margin:0 0 24px'>" + now + "</p>"
+    )
+
+    if movement_alerts:
+        html += "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>Price Movements</h2>"
+        html += (
+            "<table style='width:100%;border-collapse:collapse;"
+            "background:#87CEFB;border-radius:8px;overflow:hidden;margin-bottom:24px'>"
+            "<thead><tr>"
+        )
+        for h_txt in ["Ticker", "Name", "Prev EUR", "Now EUR", "Change"]:
+            html += (
+                "<th style='padding:8px 12px;text-align:left;background:#87CEFB;"
+                "color:#0a0a0a;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+                + h_txt + "</th>"
+            )
+        html += "</tr></thead><tbody>"
+        for m in movement_alerts:
+            col   = "#1a7a3a" if m["move_pct"] > 0 else "#c0392b"
+            arrow = "+" if m["move_pct"] > 0 else "-"
+            bd    = "border-bottom:1px solid #21293a;background:#87CEFB;color:#0a0a0a"
+            html += (
+                "<tr>"
+                "<td style='padding:9px 12px;" + bd + ";color:#FFBF00;font-weight:700'>" + m["ticker"] + "</td>"
+                "<td style='padding:9px 12px;" + bd + ";color:#FFBF00'>" + m["name"][:24] + "</td>"
+                "<td style='padding:9px 12px;" + bd + "'>EUR " + "{:.2f}".format(m["price_prev"]) + "</td>"
+                "<td style='padding:9px 12px;" + bd + "'>EUR " + "{:.2f}".format(m["price_now"]) + "</td>"
+                "<td style='padding:9px 12px;" + bd + ";color:" + col + ";font-weight:700'>"
+                + arrow + " " + "{:.2f}".format(abs(m["move_pct"])) + "%</td>"
+                "</tr>"
+            )
+        html += "</tbody></table>"
+
+    if rating_alerts:
+        html += "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>Analyst Rating Changes</h2>"
+        html += (
+            "<table style='width:100%;border-collapse:collapse;"
+            "background:#87CEFB;border-radius:8px;overflow:hidden;margin-bottom:24px'>"
+            "<thead><tr>"
+        )
+        for h_txt in ["Ticker", "Name", "Firm", "From", "", "To", "Action"]:
+            html += (
+                "<th style='padding:8px 12px;text-align:left;background:#87CEFB;"
+                "color:#0a0a0a;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+                + h_txt + "</th>"
+            )
+        html += "</tr></thead><tbody>"
+        for r in rating_alerts:
+            tg    = r.get("to_grade", "")
+            tl    = tg.lower()
+            col   = (
+                "#1a7a3a" if any(w in tl for w in ["buy", "outperform", "overweight"])
+                else "#c0392b" if any(w in tl for w in ["sell", "underperform", "underweight"])
+                else "#b8860b"
+            )
+            act   = r.get("action", "").lower()
+            a_lbl = {"up": "UPGRADE", "down": "DOWNGRADE", "init": "INIT", "reit": "--"}.get(act, act)
+            a_col = {"up": "#1a7a3a", "down": "#c0392b", "init": "#4f9ef8"}.get(act, "#555555")
+            bd    = "border-bottom:1px solid #21293a;background:#87CEFB;color:#0a0a0a"
+            html += (
+                "<tr>"
+                "<td style='padding:9px 12px;" + bd + ";color:#FFBF00;font-weight:700'>" + r["ticker"] + "</td>"
+                "<td style='padding:9px 12px;" + bd + ";color:#FFBF00'>" + r["name"][:22] + "</td>"
+                "<td style='padding:9px 12px;" + bd + "'>" + r.get("firm", "") + "</td>"
+                "<td style='padding:9px 12px;" + bd + ";text-decoration:line-through'>" + (r.get("from_grade") or "--") + "</td>"
+                "<td style='padding:9px 12px;" + bd + "'>-></td>"
+                "<td style='padding:9px 12px;" + bd + ";color:" + col + ";font-weight:700'>" + tg + "</td>"
+                "<td style='padding:9px 12px;" + bd + ";color:" + a_col + ";font-size:10px'>" + a_lbl + "</td>"
+                "</tr>"
+            )
+        html += "</tbody></table>"
+
+    html += (
+        "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
+        "Portfolio Intelligence - GitHub Actions</p></div>"
+    )
+
+    subject_parts = []
+    if movement_alerts:
+        subject_parts.append(str(len(movement_alerts)) + " movement(s)")
+    if rating_alerts:
+        subject_parts.append(str(len(rating_alerts)) + " rating change(s)")
+
+    send_email(
+        "[ALERT] " + " + ".join(subject_parts) + " - " +
+        datetime.utcnow().strftime("%H:%M UTC"),
+        html,
+        cfg
+    )
+    return len(movement_alerts) + len(rating_alerts)
 
 
 def main():
