@@ -14,10 +14,10 @@ from datetime import datetime, date
 sys.path.insert(0, str(Path(__file__).parent))
 from shared import (
     load_config, save_json, load_json,
-    INTEL_F, RATINGS_F,
-    get_analyst_upgrades, get_company_news, get_morningstar_data,
+    INTEL_F,
+    get_stock_data, get_analyst_upgrades, get_morningstar_data,
     append_alert, send_email,
-    rating_change_html, news_digest_html, log
+    rating_change_html, log
 )
 
 
@@ -90,104 +90,68 @@ def check_ratings(ticker: str, name: str, seen: dict, cfg: dict) -> list:
 
 
 def main():
-    log.info("=== Intelligence Check ===")
-    cfg = load_config()
+    log.info("=== Intelligence run ===")
+    cfg        = load_config()
+    intel_data = load_json(INTEL_F, {"holdings": []})
+    existing   = {h["ticker"]: h for h in intel_data.get("holdings", [])}
+    today      = datetime.utcnow().strftime("%Y-%m-%d")
+    ratings_days_back = cfg.get("finnhub", {}).get("ratings_days_back", 7)
 
-    seen         = load_seen()
     all_holdings = cfg["portfolio"]["stocks"] + cfg["portfolio"]["etfs"]
-    news_days_back = cfg.get("finnhub", {}).get("news_days_back", 1)
-    max_news       = cfg.get("finnhub", {}).get("max_news_per_stock", 3)
-
-    if not all_holdings:
-        log.info("No holdings configured.")
-        return
-
-    log.info("Checking " + str(len(all_holdings)) + " holdings...")
-
-    intel_data = {
-        "generated": datetime.utcnow().isoformat(),
-        "holdings":  []
-    }
-    total_new_ratings = 0
-    total_news        = 0
+    updated = []
 
     for h in all_holdings:
         ticker = (h.get("ticker") or "").strip()
-        isin   = (h.get("isin")   or "").strip()
         name   = h.get("name", ticker)
+        isin   = h.get("isin", "")
         if not ticker:
             continue
 
-        log.info("  -- " + ticker + " --")
+        entry = existing.get(ticker, {"ticker": ticker, "name": name, "ratings": [], "news": []})
+        entry["name"] = name
 
-        entry = {
-            "ticker":      ticker,
-            "name":        name,
-            "ratings":     [],
-            "new_ratings": [],
-            "news":        [],
-            "morningstar": {}
-        }
-
-        # Morningstar data (star rating + analyst rating)
+        # Morningstar ratings
         if isin:
-            log.info("    Morningstar...")
+            log.info("  Morningstar: " + ticker)
             ms = get_morningstar_data(ticker, isin)
-            entry["morningstar"] = ms
+            if ms:
+                entry["star_rating"]    = ms.get("star_rating")
+                entry["analyst_rating"] = ms.get("analyst_rating")
+
+        # Broker upgrades/downgrades (US only)
+        log.info("  Broker ratings: " + ticker)
+        new_ratings = get_analyst_upgrades(ticker, days_back=ratings_days_back)
+        if new_ratings:
+            seen_keys = {
+                (r["date"], r["firm"], r["to_grade"])
+                for r in entry.get("ratings", [])
+            }
+            truly_new = [
+                r for r in new_ratings
+                if (r["date"], r["firm"], r["to_grade"]) not in seen_keys
+            ]
+            entry["ratings"]     = (new_ratings + entry.get("ratings", []))[:50]
+            entry["new_ratings"] = [r for r in truly_new if r["date"] == today]
+
+            for r in entry["new_ratings"]:
+                log.info(
+                    "  NEW RATING: " + ticker + " " +
+                    r.get("firm", "") + " " + r.get("to_grade", "")
+                )
+                send_email(
+                    "[RATING] " + ticker + " " + r.get("action", "").upper() +
+                    " -> " + r.get("to_grade", ""),
+                    rating_change_html(ticker, name, [r]),
+                    cfg
+                )
         else:
-            log.info("    Morningstar skipped (no ISIN)")
+            entry["new_ratings"] = []
 
-        # Broker analyst ratings (US stocks only)
-        log.info("    Ratings...")
-        all_ratings          = check_ratings(ticker, name, seen, cfg)
-        entry["ratings"]     = all_ratings[:10]
-        entry["new_ratings"] = [
-            r for r in all_ratings
-            if r.get("date") == date.today().isoformat()
-            and is_meaningful_change(r)
-        ]
-        total_new_ratings += len(entry["new_ratings"])
+        updated.append(entry)
 
-        # News via RSS
-        log.info("    News...")
-        news = get_company_news(ticker, days_back=news_days_back,
-                        max_articles=max_news, holding_name=name)
-        entry["news"] = news
-        total_news   += len(news)
-        log.info("    " + str(len(news)) + " article(s)")
-
-        intel_data["holdings"].append(entry)
-
-    save_seen(seen)
-    log.info("Seen-ratings saved -> " + str(RATINGS_F))
-
-    save_json(INTEL_F, intel_data)
+    save_json(INTEL_F, {"holdings": updated, "updated": today})
     log.info("Intelligence saved -> " + str(INTEL_F))
-
-    holdings_with_news = [h for h in intel_data["holdings"] if h.get("news")]
-    if holdings_with_news:
-        run_label = datetime.utcnow().strftime("%H:%M UTC")
-        log.info("--- Sending news digest (" + str(total_news) + " articles) ---")
-        send_email(
-            "News Digest - " + run_label,
-            news_digest_html(holdings_with_news, run_label),
-            cfg
-        )
-        append_alert(
-            "news", "",
-            "News digest: " + str(total_news) + " article(s) across " +
-            str(len(holdings_with_news)) + " holding(s)"
-        )
-    else:
-        log.info("  No news articles found - skipping news email")
-
-    summary = (
-        "Intel run complete: " + str(len(all_holdings)) + " holdings, " +
-        str(total_new_ratings) + " new rating change(s), " +
-        str(total_news) + " news article(s)"
-    )
-    append_alert("intel_run", "", summary)
-    log.info("=== " + summary + " ===")
+    log.info("=== Done ===")
 
 
 if __name__ == "__main__":
