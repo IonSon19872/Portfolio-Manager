@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from shared import (
     load_config, save_json, load_json,
     INTEL_F, RATINGS_F,
-    get_analyst_upgrades, get_company_news,
+    get_analyst_upgrades, get_company_news, get_morningstar_data,
     append_alert, send_email,
     rating_change_html, news_digest_html, log
 )
