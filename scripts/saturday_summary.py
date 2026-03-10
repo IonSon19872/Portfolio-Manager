@@ -2,21 +2,12 @@
 """
 saturday_summary.py - Triggered every Saturday at 10:00 CET
 
-Sends one weekly roundup email covering:
-
-  PAST WEEK
-  - Portfolio total value + week-over-week change
-  - Top movers of the week (Mon open vs Fri close)
-  - Analyst rating changes from the past 5 trading days
-  - News from the past 5 days across all holdings
-
-  NEXT WEEK AHEAD
-  - Earnings reports (date, time, EPS estimate, revenue estimate)
-  - Ex-dividend dates (amount, pay date, frequency)
-  - Stock splits (ratio)
-
-Calls per holding: 3 (earnings + dividends + splits)
-With 1 s throttle: ~65 s for 20 holdings.
+Sends weekly roundup email:
+  - Portfolio total + week-over-week change
+  - Top movers of the week
+  - Analyst rating changes from past 5 days
+  - News from past 5 days
+  - Next week: earnings, dividends, splits
 """
 
 import sys
@@ -30,7 +21,6 @@ from shared import (
     send_email, append_alert,
     saturday_summary_html, next_week_calendar_html,
     get_earnings_calendar, get_dividends, get_stock_splits,
-    to_finnhub_symbol,
     log
 )
 
@@ -38,7 +28,6 @@ WEEK_OPEN_F = DATA_DIR / "week_open.json"
 
 
 def next_weekday_range():
-    """Return (next_monday_str, next_friday_str) as YYYY-MM-DD."""
     today       = date.today()
     days_to_mon = (7 - today.weekday()) % 7 or 7
     next_mon    = today + timedelta(days=days_to_mon)
@@ -47,7 +36,6 @@ def next_weekday_range():
 
 
 def fmt_date(d: str) -> str:
-    """YYYY-MM-DD -> 'Mon 10 Mar'"""
     try:
         return datetime.strptime(d, "%Y-%m-%d").strftime("%a %d %b")
     except Exception:
@@ -85,35 +73,30 @@ def build_week_movements(snapshot: dict, week_open: dict) -> list:
 
 
 def fetch_next_week_calendar(cfg: dict) -> dict:
-    api_key      = cfg["finnhub"]["api_key"]
     next_mon, next_fri = next_weekday_range()
-    all_holdings = cfg["portfolio"]["stocks"] + cfg["portfolio"]["etfs"]
+    all_holdings       = cfg["portfolio"]["stocks"] + cfg["portfolio"]["etfs"]
 
     earnings_all  = []
     dividends_all = []
     splits_all    = []
 
-    log.info("  Fetching calendar data for next week: " + next_mon + " -> " + next_fri)
+    log.info("  Fetching calendar for next week: " + next_mon + " -> " + next_fri)
 
     for h in all_holdings:
-        ticker      = (h.get("ticker") or "").strip()
-        name        = h.get("name", ticker)
-        finnhub_sym = h.get("finnhub_symbol") or to_finnhub_symbol(ticker)
+        ticker = (h.get("ticker") or "").strip()
+        name   = h.get("name", ticker)
         if not ticker:
             continue
 
-        log.info("    " + ticker + " (" + finnhub_sym + ")")
+        log.info("    " + ticker)
 
-        # Earnings (1 call)
-        for e in get_earnings_calendar(finnhub_sym, api_key, next_mon, next_fri):
+        for e in get_earnings_calendar(ticker, from_date=next_mon, to_date=next_fri):
             earnings_all.append(dict(e, ticker=ticker, name=name))
 
-        # Dividends (1 call)
-        for d in get_dividends(finnhub_sym, api_key, next_mon, next_fri):
+        for d in get_dividends(ticker, from_date=next_mon, to_date=next_fri):
             dividends_all.append(dict(d, ticker=ticker, name=name))
 
-        # Splits (1 call)
-        for s in get_stock_splits(finnhub_sym, api_key, next_mon, next_fri):
+        for s in get_stock_splits(ticker, from_date=next_mon, to_date=next_fri):
             splits_all.append(dict(s, ticker=ticker, name=name))
 
     earnings_all.sort(key=lambda x: x.get("date", ""))
@@ -138,10 +121,6 @@ def main():
     log.info("=== Saturday Weekly Summary ===")
     cfg = load_config()
 
-    if not cfg["finnhub"]["api_key"]:
-        log.error("FINNHUB_API_KEY not set.")
-        sys.exit(1)
-
     snapshot   = load_json(SNAPSHOT_F, {"stocks": [], "etfs": [], "total_eur": 0})
     week_open  = load_json(WEEK_OPEN_F, {})
     intel_data = load_json(INTEL_F, {"holdings": []})
@@ -164,11 +143,9 @@ def main():
     next_fri = calendar["next_fri"]
 
     log.info("--- Building and sending Saturday email ---")
-
     past_html = saturday_summary_html(snapshot, intel_data, week_movements)
     cal_html  = next_week_calendar_html(calendar, fmt_date(next_mon), fmt_date(next_fri))
 
-    # Inject calendar section just before the footer
     footer_marker = "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
     combined_html = past_html.replace(footer_marker, cal_html + footer_marker, 1)
 
