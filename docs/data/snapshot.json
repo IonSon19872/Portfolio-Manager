@@ -33,7 +33,7 @@
       "analyst_sell": 0,
       "analyst_total": 66,
       "rec_period": "2026-03-01",
-      "timestamp": "2026-03-10T07:49:57.906366",
+      "timestamp": "2026-03-10T08:04:20.073490",
       "shares": 5,
       "value_eur": 1893.5
     },
@@ -84,7 +84,7 @@
       "beta": 1.0961396,
       "52w_high": 322.82,
       "52w_low": 129.99,
-      "dividend_yield": 0.28138816,
+      "dividend_yield": 0.27418724,
       "eps_ttm": 10.8058,
       "revenue_growth": 15.09,
       "roe": 35,
@@ -94,7 +94,7 @@
       "analyst_sell": 0,
       "analyst_total": 69,
       "rec_period": "2026-03-01",
-      "timestamp": "2026-03-10T07:50:07.247589",
+      "timestamp": "2026-03-10T08:04:29.065144",
       "shares": 2,
       "value_eur": 566.12
     },
@@ -147,7 +147,7 @@
       "analyst_sell": 1,
       "analyst_total": 73,
       "rec_period": "2026-03-01",
-      "timestamp": "2026-03-10T07:50:15.479873",
+      "timestamp": "2026-03-10T08:04:36.973386",
       "shares": 0,
       "value_eur": 0.0
     },
@@ -184,7 +184,7 @@
       "analyst_sell": 0,
       "analyst_total": 76,
       "rec_period": "2026-03-01",
-      "timestamp": "2026-03-10T07:50:21.273773",
+      "timestamp": "2026-03-10T08:04:42.560329",
       "shares": 0,
       "value_eur": 0.0
     },
@@ -221,7 +221,7 @@
       "analyst_sell": 2,
       "analyst_total": 54,
       "rec_period": "2026-03-01",
-      "timestamp": "2026-03-10T07:50:27.182398",
+      "timestamp": "2026-03-10T08:04:48.184503",
       "shares": 0,
       "value_eur": 0.0
     },
@@ -274,7 +274,7 @@
       "analyst_sell": 0,
       "analyst_total": 39,
       "rec_period": "2026-03-01",
-      "timestamp": "2026-03-10T07:50:35.421254",
+      "timestamp": "2026-03-10T08:04:56.426637",
       "shares": 0,
       "value_eur": 0.0
     },
@@ -330,5 +330,5 @@
     }
   ],
   "total_eur": 2459.62,
-  "timestamp": "2026-03-10T07:49:51.622293"
+  "timestamp": "2026-03-10T08:04:14.219576"
 }
