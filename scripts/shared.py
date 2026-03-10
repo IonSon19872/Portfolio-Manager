@@ -242,30 +242,47 @@ def get_company_news(ticker: str, _ignored: str = "",
                      days_back: int = 1, max_articles: int = 3) -> list:
     cutoff = (date.today() - timedelta(days=days_back)).isoformat()
     try:
-        t    = yf.Ticker(ticker)
-        news = t.news
-        if not news:
-            return []
+        import urllib.request
+        import xml.etree.ElementTree as ET
+
+        url = "https://feeds.finance.yahoo.com/rss/2.0/headline?s=" + ticker + "&region=US&lang=en-US"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            raw = resp.read()
+
+        root  = ET.fromstring(raw)
+        ns    = {"dc": "http://purl.org/dc/elements/1.1/"}
+        items = root.findall(".//item")
+
         results, seen = [], set()
-        for item in news:
-            title = item.get("title", "")
+        for item in items:
+            title = (item.findtext("title") or "").strip()
             if not title or title in seen:
                 continue
             seen.add(title)
-            ts = item.get("providerPublishTime", 0)
-            d  = datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d") if ts else ""
+
+            pub = item.findtext("pubDate") or ""
+            try:
+                dt  = datetime.strptime(pub[:16].strip(), "%a, %d %b %Y")
+                d   = dt.strftime("%Y-%m-%d")
+            except Exception:
+                d = ""
+
             if d and d < cutoff:
                 continue
+
             results.append({
                 "title":   title,
-                "source":  item.get("publisher", ""),
-                "url":     item.get("link", ""),
+                "source":  item.findtext("source") or "Yahoo Finance",
+                "url":     item.findtext("link") or "",
                 "date":    d,
-                "summary": (item.get("summary") or "")[:200],
+                "summary": "",
             })
             if len(results) >= max_articles:
                 break
+
         return results
+
     except Exception as e:
         log.warning("  news fetch failed for " + ticker + ": " + str(e))
         return []
