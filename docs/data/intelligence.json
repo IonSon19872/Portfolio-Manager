@@ -1,54 +1,157 @@
 {
-  "generated": "2026-03-10T09:31:28.137241",
+  "generated": "2026-03-10T10:13:32.489955",
   "holdings": [
     {
       "ticker": "MSFT",
       "name": "Microsoft",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [
+        {
+          "title": "Digital Oilfield Solutions Industry Report 2026-2035: Market to Reach $58.66 Billion by 2030 with Microsoft, Siemens, Intel, IBM, Deloitte, General Electric, Schneider Electric Leading",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/digital-oilfield-solutions-industry-report-091300822.html?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "Software Bear Market: 2 AI Stocks With 42% and 47% Upside to Buy Now, According to Wall Street",
+          "source": "Yahoo Finance",
+          "url": "https://www.fool.com/investing/2026/03/10/bear-market-2-ai-stocks-47-upside-buy-wall-street/?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "AI in Oil and Gas Industry Research Report 2026-2035: Market to Surpass $7.5 Billion by 2030 with IBM, Microsoft, Google, Intel Schlumberger, Halliburton, Baker Hughes Leading",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/ai-oil-gas-industry-research-090600602.html?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        }
+      ],
+      "morningstar": {}
     },
     {
       "ticker": "ENR.DE",
       "name": "Siemens Energy",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [
+        {
+          "title": "Babcock & Wilcox Will Deliver 1.2 GW of Gas-Fired Capacity for Applied Digital Data Centers",
+          "source": "Yahoo Finance",
+          "url": "https://www.powermag.com/babcock-wilcox-will-deliver-1-2-gw-of-gas-fired-capacity-for-applied-digital-data-centers/?.tsrc=rss",
+          "date": "2026-03-09",
+          "summary": ""
+        },
+        {
+          "title": "Siemens Energy Buyback Puts Gamesa Turnaround And Cash Returns In Focus",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/siemens-energy-buyback-puts-gamesa-131003724.html?.tsrc=rss",
+          "date": "2026-03-09",
+          "summary": ""
+        },
+        {
+          "title": "Assessing Siemens Energy (XTRA:ENR) Valuation After Recent Mixed Share Price Performance",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/assessing-siemens-energy-xtra-enr-120808108.html?.tsrc=rss",
+          "date": "2026-03-09",
+          "summary": ""
+        }
+      ],
+      "morningstar": {}
     },
     {
       "ticker": "VH2.DE",
       "name": "Friedrich Vorwerk Group",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [],
+      "morningstar": {}
     },
     {
       "ticker": "MILDEF.ST",
       "name": "MilDef Group",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [],
+      "morningstar": {}
     },
     {
       "ticker": "GOOG",
       "name": "Alphabet (Google) Class C",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [
+        {
+          "title": "BofA Calls Open AI News a Positive for Walmart Inc. (WMT)",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/bofa-calls-open-ai-news-094201100.html?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "AI in Oil and Gas Industry Research Report 2026-2035: Market to Surpass $7.5 Billion by 2030 with IBM, Microsoft, Google, Intel Schlumberger, Halliburton, Baker Hughes Leading",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/ai-oil-gas-industry-research-090600602.html?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "Prediction: This Popular Stock Will Tumble Out of the $1 Trillion Club in 2026",
+          "source": "Yahoo Finance",
+          "url": "https://www.fool.com/investing/2026/03/10/prediction-this-stock-tumble-1-trillion-club-2026/?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        }
+      ],
+      "morningstar": {}
     },
     {
       "ticker": "AIR.PA",
       "name": "Airbus",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [
+        {
+          "title": "CDB Aviation Leases Five A321neo Aircraft to LATAM",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/cdb-aviation-leases-five-a321neo-170200759.html?.tsrc=rss",
+          "date": "2026-03-09",
+          "summary": ""
+        },
+        {
+          "title": "Boeing Balances Huge China Jet Deal With Rising NASA Program Risks",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/boeing-balances-huge-china-jet-161212564.html?.tsrc=rss",
+          "date": "2026-03-09",
+          "summary": ""
+        },
+        {
+          "title": "Aviation Test Equipment Market Report 2025-2033 - Global Air Traffic and MRO Growth Boosts the Need for Precise Diagnostic Tools with Technological Integration",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/aviation-test-equipment-market-report-100500976.html?.tsrc=rss",
+          "date": "2026-03-09",
+          "summary": ""
+        }
+      ],
+      "morningstar": {}
     },
     {
       "ticker": "HO.PA",
       "name": "Thales",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [
+        {
+          "title": "Precision Aviation Services, a subsidiary of Precision Aviation Group, Named Authorized Autopilot Installer for Thales and StandardAero StableLight\u2122 System Ahead of Verticon 2026",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/precision-aviation-services-subsidiary-precision-175400700.html?.tsrc=rss",
+          "date": "2026-03-09",
+          "summary": ""
+        }
+      ],
+      "morningstar": {}
     },
     {
       "ticker": "NVDA",
@@ -70,14 +173,60 @@
         }
       ],
       "new_ratings": [],
-      "news": []
+      "news": [
+        {
+          "title": "Here's What Would Need to Happen For Ethereum to Flip Bitcoin by 2030",
+          "source": "Yahoo Finance",
+          "url": "https://www.fool.com/investing/2026/03/10/heres-what-would-need-to-happen-for-ethereum-to-fl/?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "1 Top ETF to Load Up On in 2026",
+          "source": "Yahoo Finance",
+          "url": "https://www.fool.com/investing/2026/03/10/1-top-etf-to-load-up-on-in-2026/?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "The PC Collapse Has a Winner -- and It's Not Who You Think",
+          "source": "Yahoo Finance",
+          "url": "https://www.fool.com/investing/2026/03/10/the-pc-collapse-has-a-winner-and-its-not-who-you-t/?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        }
+      ],
+      "morningstar": {}
     },
     {
       "ticker": "AMZN",
       "name": "Amazon",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [
+        {
+          "title": "Prediction: This Popular Stock Will Tumble Out of the $1 Trillion Club in 2026",
+          "source": "Yahoo Finance",
+          "url": "https://www.fool.com/investing/2026/03/10/prediction-this-stock-tumble-1-trillion-club-2026/?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "2 AI Stocks Shaping the Future of Technology to Buy Now, According to Wall Street",
+          "source": "Yahoo Finance",
+          "url": "https://www.fool.com/investing/2026/03/10/2-ai-stocks-shaping-future-technology-buy-wall-st/?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "Buying Amazon Stock When It's Down This Much Has Always Paid Off in the Past. Will It Again?",
+          "source": "Yahoo Finance",
+          "url": "https://www.fool.com/investing/2026/03/10/buying-amazon-stock-when-its-down-this-much-has-pa/?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        }
+      ],
+      "morningstar": {}
     },
     {
       "ticker": "AAPL",
@@ -106,70 +255,139 @@
         }
       ],
       "new_ratings": [],
-      "news": []
-    },
-    {
-      "ticker": "GBF.DE",
-      "name": "Bilfinger",
-      "ratings": [],
-      "new_ratings": [],
-      "news": []
-    },
-    {
-      "ticker": "BA.L",
-      "name": "BAE Systems",
-      "ratings": [],
-      "new_ratings": [],
-      "news": []
+      "news": [
+        {
+          "title": "Prediction: This Popular Stock Will Tumble Out of the $1 Trillion Club in 2026",
+          "source": "Yahoo Finance",
+          "url": "https://www.fool.com/investing/2026/03/10/prediction-this-stock-tumble-1-trillion-club-2026/?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "Integrated Advisors Loads Up on 368,000 Shares of ACWX. Here's What Investors Need to Know",
+          "source": "Yahoo Finance",
+          "url": "https://www.fool.com/coverage/filings/2026/03/10/integrated-advisors-loads-up-on-368-000-shares-of-acwx-here-s-what-investors-need-to-know/?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "Apple now makes one in four iPhones in India: report",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/apple-now-makes-one-four-060443514.html?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        }
+      ],
+      "morningstar": {}
     },
     {
       "ticker": "LLY",
       "name": "Eli Lilly",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [
+        {
+          "title": "Eli Lilly and Company (LLY) Announces the Launch of its Employer Connect Platform",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/eli-lilly-company-lly-announces-094557293.html?.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "Aktis Oncology Unveils Miniprotein Radiopharma Platform, Highlights Nectin-4 and B7-H3 Programs",
+          "source": "Yahoo Finance",
+          "url": "https://www.marketbeat.com/instant-alerts/aktis-oncology-unveils-miniprotein-radiopharma-platform-highlights-nectin-4-and-b7-h3-programs-2026-03-09/?utm_source=yahoofinance&utm_medium=yahoofinance&.tsrc=rss",
+          "date": "2026-03-10",
+          "summary": ""
+        },
+        {
+          "title": "Eli Lilly (LLY) Laps the Stock Market: Here's Why",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/eli-lilly-lly-laps-stock-214504661.html?.tsrc=rss",
+          "date": "2026-03-09",
+          "summary": ""
+        }
+      ],
+      "morningstar": {}
+    },
+    {
+      "ticker": "GBF.DE",
+      "name": "Bilfinger",
+      "ratings": [],
+      "new_ratings": [],
+      "news": [],
+      "morningstar": {}
+    },
+    {
+      "ticker": "BA.L",
+      "name": "BAE Systems",
+      "ratings": [],
+      "new_ratings": [],
+      "news": [
+        {
+          "title": "Danish Army selects BAE Systems OneArc for enterprise simulation modernization",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/danish-army-selects-bae-systems-140000205.html?.tsrc=rss",
+          "date": "2026-03-09",
+          "summary": ""
+        },
+        {
+          "title": "Iran Conflict Boosts Defense Stocks, But Not Rheinmetall",
+          "source": "Yahoo Finance",
+          "url": "https://finance.yahoo.com/m/81acef4d-8449-3051-8023-26910b1ee856/iran-conflict-boosts-defense.html?.tsrc=rss",
+          "date": "2026-03-09",
+          "summary": ""
+        }
+      ],
+      "morningstar": {}
     },
     {
       "ticker": "BESI.AS",
       "name": "BE Semiconductor (BESI)",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [],
+      "morningstar": {}
     },
     {
       "ticker": "ASM.AS",
       "name": "ASM International (ASMI)",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [],
+      "morningstar": {}
     },
     {
       "ticker": "SPYY.DE",
       "name": "SPDR MSCI ACWI UCITS ETF",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [],
+      "morningstar": {}
     },
     {
       "ticker": "EUNK.DE",
       "name": "iShares Core MSCI Europe UCITS ETF",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [],
+      "morningstar": {}
     },
     {
       "ticker": "QDVE.DE",
       "name": "iShares S&P 500 IT Sector UCITS ETF",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [],
+      "morningstar": {}
     },
     {
       "ticker": "IS3N.DE",
       "name": "iShares Core MSCI EM IMI UCITS ETF",
       "ratings": [],
       "new_ratings": [],
-      "news": []
+      "news": [],
+      "morningstar": {}
     }
   ]
 }
