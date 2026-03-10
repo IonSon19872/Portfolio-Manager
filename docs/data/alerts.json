@@ -1,5 +1,17 @@
 [
   {
+    "ts": "2026-03-10 14:19 UTC",
+    "type": "earnings",
+    "ticker": "ITX.MC",
+    "message": "ITX.MC earnings on 2026-03-11"
+  },
+  {
+    "ts": "2026-03-10 14:19 UTC",
+    "type": "earnings",
+    "ticker": "ADBE",
+    "message": "ADBE earnings on 2026-03-12"
+  },
+  {
     "ts": "2026-03-10 14:16 UTC",
     "type": "earnings",
     "ticker": "ITX.MC",
