@@ -1,5 +1,41 @@
 [
   {
+    "ts": "2026-03-10 14:56 UTC",
+    "type": "earnings",
+    "ticker": "ITX.MC",
+    "message": "ITX.MC earnings on 2026-03-11"
+  },
+  {
+    "ts": "2026-03-10 14:56 UTC",
+    "type": "earnings",
+    "ticker": "ADBE",
+    "message": "ADBE earnings on 2026-03-12"
+  },
+  {
+    "ts": "2026-03-10 14:56 UTC",
+    "type": "digest",
+    "ticker": "",
+    "message": "Morning digest sent at 14:55 UTC"
+  },
+  {
+    "ts": "2026-03-10 14:56 UTC",
+    "type": "movement_last",
+    "ticker": "GBF.DE",
+    "message": "GBF.DE UP 1.0% since last check (EUR 107.10 -> EUR 108.20)"
+  },
+  {
+    "ts": "2026-03-10 14:56 UTC",
+    "type": "movement_last",
+    "ticker": "NVDA",
+    "message": "NVDA UP 1.0% since last check (EUR 157.52 -> EUR 159.10)"
+  },
+  {
+    "ts": "2026-03-10 14:56 UTC",
+    "type": "movement_last",
+    "ticker": "ENR.DE",
+    "message": "ENR.DE UP 1.3% since last check (EUR 155.90 -> EUR 157.85)"
+  },
+  {
     "ts": "2026-03-10 14:35 UTC",
     "type": "weekly_summary",
     "ticker": "",
