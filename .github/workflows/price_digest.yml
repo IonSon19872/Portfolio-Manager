@@ -1,7 +1,7 @@
 name: Price Digest (08:15 CET)
 on:
   schedule:
-    - cron: '15 7 * * 1-5'   # 08:15 CET (UTC+1)
+    - cron: '09 7 * * 1-5'   # 08:09 CET (UTC+1)
     # Summer CEST (UTC+2): change to '15 6 * * 1-5'
   workflow_dispatch: {}
 permissions:
