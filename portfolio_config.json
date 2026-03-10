@@ -7,19 +7,7 @@
         "shares": 5,
         "isin": "US5949181045"
       },
-      {
-        "ticker": "ADBE",
-        "name": "Adobe Inc",
-        "shares": 0,
-        "isin": "US00724F1012"
-      },
-      {
-        "ticker": "ITX.MC",
-        "name": "Inditex",
-        "shares": 0,
-        "isin": "ES0148396007"
-      },
-      {
+     {
         "ticker": "ENR.DE",
         "name": "Siemens Energy",
         "shares": 9,
