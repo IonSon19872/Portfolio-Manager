@@ -15,9 +15,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 from shared import (
     load_config, save_config, save_json, load_json,
     SNAPSHOT_F, INTEL_F, DATA_DIR,
-    get_stock_data, get_company_news,
+    get_stock_data, get_company_news, get_earnings_calendar,
     append_alert, send_email,
-    digest_html, news_digest_html, movement_html, _BASE, log
+    digest_html, news_digest_html, _BASE, log
 )
 
 WEEK_OPEN_F = DATA_DIR / "week_open.json"
@@ -65,6 +65,7 @@ def build_snapshot(cfg: dict) -> dict:
 
     snapshot["total_eur"] = round(snapshot["total_eur"], 2)
     return snapshot
+
 
 
 def check_movements_and_ratings(snapshot: dict, cfg: dict) -> int:
@@ -227,6 +228,169 @@ def check_movements_and_ratings(snapshot: dict, cfg: dict) -> int:
     )
     return len(movement_alerts) + len(rating_alerts)
 
+def check_earnings_alerts(cfg: dict):
+    """Send alert if any holding has earnings in the next 2 days."""
+    from datetime import timedelta
+    all_holdings = cfg["portfolio"]["stocks"] + cfg["portfolio"]["etfs"]
+    today        = datetime.utcnow().date()
+    alerts       = []
+
+    for h in all_holdings:
+        ticker = (h.get("ticker") or "").strip()
+        name   = h.get("name", ticker)
+        if not ticker:
+            continue
+        try:
+            from_date = today.isoformat()
+            to_date   = (today + timedelta(days=2)).isoformat()
+            events    = get_earnings_calendar(ticker,
+                                              from_date=from_date,
+                                              to_date=to_date)
+            for e in events:
+                alerts.append({
+                    "ticker":       ticker,
+                    "name":         name,
+                    "date":         e.get("date", ""),
+                    "eps_estimate": e.get("eps_estimate"),
+                    "revenue_est":  e.get("revenue_est"),
+                })
+                log.info("  EARNINGS SOON: " + ticker + " on " + e.get("date", ""))
+        except Exception as e:
+            log.warning("  earnings check failed for " + ticker + ": " + str(e))
+
+    if not alerts:
+        return
+
+    now  = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    html = "<div style='" + _BASE + "'>"
+    html += (
+        "<h1 style='font-size:20px;color:#f6ad55;margin:0 0 4px'>Earnings Alert</h1>"
+        "<p style='color:#7d8fa8;margin:0 0 24px'>" + now + "</p>"
+        "<table style='width:100%;border-collapse:collapse;"
+        "background:#87CEFB;border-radius:8px;overflow:hidden;margin-bottom:24px'>"
+        "<thead><tr>"
+    )
+    for h_txt in ["Ticker", "Name", "Date", "EPS Est.", "Rev Est."]:
+        html += (
+            "<th style='padding:8px 12px;text-align:left;background:#87CEFB;"
+            "color:#0a0a0a;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+            + h_txt + "</th>"
+        )
+    html += "</tr></thead><tbody>"
+    for a in alerts:
+        eps = ("$" + "{:.2f}".format(a["eps_estimate"])) if a.get("eps_estimate") is not None else "--"
+        rev = ("$" + "{:.1f}".format(a["revenue_est"] / 1e9) + "B") if (a.get("revenue_est") and a["revenue_est"] > 1e6) else "--"
+        bd  = "border-bottom:1px solid #21293a;background:#87CEFB;color:#0a0a0a"
+        html += (
+            "<tr>"
+            "<td style='padding:9px 12px;" + bd + ";color:#06402B;font-weight:700'>" + a["ticker"] + "</td>"
+            "<td style='padding:9px 12px;" + bd + ";color:#06402B'>" + a["name"][:24] + "</td>"
+            "<td style='padding:9px 12px;" + bd + ";color:#f6ad55;font-weight:600'>" + a["date"] + "</td>"
+            "<td style='padding:9px 12px;" + bd + "'>" + eps + "</td>"
+            "<td style='padding:9px 12px;" + bd + "'>" + rev + "</td>"
+            "</tr>"
+        )
+    html += (
+        "</tbody></table>"
+        "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
+        "Portfolio Intelligence - GitHub Actions</p></div>"
+    )
+
+    send_email(
+        "[EARNINGS] " + ", ".join(a["ticker"] for a in alerts) +
+        " report within 2 days",
+        html,
+        cfg
+    )
+    for a in alerts:
+        append_alert("earnings", a["ticker"],
+                     a["ticker"] + " earnings on " + a["date"])
+
+def check_52w_alerts(snapshot: dict, cfg: dict):
+    """Send alert if any holding hits a new 52-week high or low."""
+    alerts = []
+
+    for item in snapshot["stocks"] + snapshot["etfs"]:
+        if "error" in item:
+            continue
+        ticker   = item.get("ticker", "")
+        price    = item.get("price_eur")
+        high_52w = item.get("52w_high")
+        low_52w  = item.get("52w_low")
+
+        if not price or not high_52w or not low_52w:
+            continue
+
+        hit_high = price >= high_52w * 0.995  # within 0.5% of 52w high
+        hit_low  = price <= low_52w  * 1.005  # within 0.5% of 52w low
+
+        if hit_high or hit_low:
+            label = "52W HIGH" if hit_high else "52W LOW"
+            color = "#1a7a3a" if hit_high else "#c0392b"
+            alerts.append({
+                "ticker":  ticker,
+                "name":    item.get("name", ticker),
+                "price":   price,
+                "high":    high_52w,
+                "low":     low_52w,
+                "label":   label,
+                "color":   color,
+                "hit_high": hit_high,
+            })
+            log.info("  52W ALERT: " + ticker + " " + label +
+                     " EUR " + "{:.2f}".format(price))
+
+    if not alerts:
+        return
+
+    now  = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    html = "<div style='" + _BASE + "'>"
+    html += (
+        "<h1 style='font-size:20px;color:#b794f4;margin:0 0 4px'>52-Week High/Low Alert</h1>"
+        "<p style='color:#7d8fa8;margin:0 0 24px'>" + now + "</p>"
+        "<table style='width:100%;border-collapse:collapse;"
+        "background:#87CEFB;border-radius:8px;overflow:hidden;margin-bottom:24px'>"
+        "<thead><tr>"
+    )
+    for h_txt in ["Ticker", "Name", "Price EUR", "52W High", "52W Low", "Signal"]:
+        html += (
+            "<th style='padding:8px 12px;text-align:left;background:#87CEFB;"
+            "color:#0a0a0a;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+            + h_txt + "</th>"
+        )
+    html += "</tr></thead><tbody>"
+    for a in alerts:
+        bd = "border-bottom:1px solid #21293a;background:#87CEFB;color:#0a0a0a"
+        html += (
+            "<tr>"
+            "<td style='padding:9px 12px;" + bd + ";color:#06402B;font-weight:700'>" + a["ticker"] + "</td>"
+            "<td style='padding:9px 12px;" + bd + ";color:#06402B'>" + a["name"][:24] + "</td>"
+            "<td style='padding:9px 12px;" + bd + ";font-weight:600'>EUR " + "{:.2f}".format(a["price"]) + "</td>"
+            "<td style='padding:9px 12px;" + bd + ";color:#1a7a3a'>EUR " + "{:.2f}".format(a["high"]) + "</td>"
+            "<td style='padding:9px 12px;" + bd + ";color:#c0392b'>EUR " + "{:.2f}".format(a["low"]) + "</td>"
+            "<td style='padding:9px 12px;" + bd + ";color:" + a["color"] + ";font-weight:700;font-size:12px'>" + a["label"] + "</td>"
+            "</tr>"
+        )
+    html += (
+        "</tbody></table>"
+        "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
+        "Portfolio Intelligence - GitHub Actions</p></div>"
+    )
+
+    highs = [a["ticker"] for a in alerts if a["hit_high"]]
+    lows  = [a["ticker"] for a in alerts if not a["hit_high"]]
+    parts = []
+    if highs:
+        parts.append(", ".join(highs) + " near 52W HIGH")
+    if lows:
+        parts.append(", ".join(lows) + " near 52W LOW")
+
+    send_email("[52W] " + " | ".join(parts), html, cfg)
+    for a in alerts:
+        append_alert("52w_" + ("high" if a["hit_high"] else "low"),
+                     a["ticker"],
+                     a["ticker"] + " " + a["label"] +
+                     " EUR " + "{:.2f}".format(a["price"]))
 
 def main():
     mode = os.environ.get("DIGEST_MODE", "full").strip().lower()
@@ -263,7 +427,8 @@ def main():
             name   = h.get("name", ticker)
             if not ticker:
                 continue
-            news = get_company_news(ticker, days_back=news_days_back, max_articles=max_news)
+            news = get_company_news(ticker, days_back=news_days_back,
+                        max_articles=max_news, holding_name=name)
             if news:
                 holdings_with_news.append({"ticker": ticker, "name": name, "news": news})
                 log.info("  " + ticker + ": " + str(len(news)) + " article(s)")
@@ -286,7 +451,13 @@ def main():
         log.info("--- Movement + analyst check ---")
         alerts_triggered = check_movements_and_ratings(snapshot, cfg)
         log.info(str(alerts_triggered) + " alert(s) sent")
+    
+    log.info("--- Earnings alert check ---")
+    check_earnings_alerts(cfg)
 
+    log.info("--- 52-week high/low alert check ---")
+    check_52w_alerts(snapshot, cfg)
+  
     log.info("=== Done ===")
 
 
