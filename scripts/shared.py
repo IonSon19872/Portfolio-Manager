@@ -553,15 +553,16 @@ _BASE = (
 
 def _TH(s):
     return (
-        "<th style='padding:8px 12px;text-align:left;background:#1c2330;"
-        "color:#7d8fa8;font-size:10px;text-transform:uppercase;"
+        "<th style='padding:8px 12px;text-align:left;background:#87CEFB;"
+        "color:#0a0a0a;font-size:10px;text-transform:uppercase;"
         "letter-spacing:1px'>" + s + "</th>"
     )
 
 
 def _td(v, x=""):
     return (
-        "<td style='padding:8px 12px;border-bottom:1px solid #21293a;" + x + "'>"
+        "<td style='padding:8px 12px;border-bottom:1px solid #21293a;"
+        "background:#87CEFB;color:#0a0a0a;" + x + "'>"
         + str(v) + "</td>"
     )
 
@@ -572,35 +573,38 @@ def _holding_row(s: dict) -> str:
     prev_close   = s.get("prev_close")   or 0
     market_closed = (abs(chg) < 0.001 and price_native > 0
                      and abs(price_native - prev_close) < 0.001)
-    color = "#7d8fa8" if market_closed else ("#52d68a" if chg >= 0 else "#f56565")
+    color = "#7d8fa8" if market_closed else ("#1a7a3a" if chg >= 0 else "#c0392b")
     arrow = "+" if chg >= 0 else "-"
 
-    # Analyst cell — broker rec OR Morningstar rating
+    # Analyst cell
     rec      = (s.get("recommendation") or "").replace("_", " ")
     ms_stars = s.get("star_rating")
     ms_ar    = s.get("analyst_rating") or ""
     ar_color = (
-        "#ffd700" if ms_ar == "Gold"
-        else "#c0c0c0" if ms_ar == "Silver"
-        else "#cd7f32" if ms_ar == "Bronze"
-        else "#f56565" if ms_ar == "Negative"
-        else "#7d8fa8"
+        "#b8860b" if ms_ar == "Gold"
+        else "#707070" if ms_ar == "Silver"
+        else "#8B4513" if ms_ar == "Bronze"
+        else "#c0392b" if ms_ar == "Negative"
+        else "#555555"
     )
 
     if ms_stars:
         stars_str = ("★" * ms_stars) + ("☆" * (5 - ms_stars))
         if ms_ar:
             analyst_html = (
-                "<span style='color:#fbbf24'>" + stars_str + "</span>"
+                "<span style='color:#b8860b'>" + stars_str + "</span>"
                 " <span style='color:" + ar_color + ";font-size:10px'>" + ms_ar + "</span>"
             )
         else:
-            analyst_html = "<span style='color:#fbbf24'>" + stars_str + "</span>"
+            analyst_html = "<span style='color:#b8860b'>" + stars_str + "</span>"
     elif rec:
-        rc           = "#52d68a" if "buy" in rec else "#f56565" if "sell" in rec else "#f6ad55"
-        analyst_html = "<span style='color:" + rc + ";font-size:10px;text-transform:uppercase'>" + rec + "</span>"
+        rc           = "#1a7a3a" if "buy" in rec else "#c0392b" if "sell" in rec else "#b8860b"
+        analyst_html = (
+            "<span style='color:" + rc + ";font-size:10px;text-transform:uppercase'>"
+            + rec + "</span>"
+        )
     else:
-        analyst_html = "<span style='color:#4a5568'>--</span>"
+        analyst_html = "<span style='color:#555555'>--</span>"
 
     p_raw  = s.get("price_eur")
     v_raw  = s.get("value_eur")
@@ -611,23 +615,23 @@ def _holding_row(s: dict) -> str:
         v_str = "{:.2f}".format(float(p_str) * float(shares))
 
     closed_badge = (
-        "<span style='color:#4a5568;font-size:9px'> mkt closed</span>"
+        "<span style='color:#555555;font-size:9px'> mkt closed</span>"
         if market_closed else ""
     )
     chg_cell = (
-        "<span style='color:" + color + "'>"
+        "<span style='color:" + color + ";font-weight:600'>"
         + arrow + " " + "{:.2f}".format(abs(chg)) + "%"
         + "</span>" + closed_badge
     )
 
     return (
         "<tr>"
-        + _td(s.get("ticker", ""),        "color:#4f9ef8;font-weight:600")
-        + _td((s.get("name") or "")[:26], "color:#7d8fa8")
-        + _td(("EUR " + p_str) if p_str != "--" else "--")
+        + _td(s.get("ticker", ""),        "color:#FFBF00;font-weight:700")
+        + _td((s.get("name") or "")[:26], "color:#FFBF00;font-weight:600")
+        + _td(("EUR " + p_str) if p_str != "--" else "--", "color:#0a0a0a")
         + _td(chg_cell)
-        + _td(str(shares) if shares else "--")
-        + _td(("EUR " + v_str) if v_str != "--" else "--", "font-weight:600")
+        + _td(str(shares) if shares else "--", "color:#0a0a0a")
+        + _td(("EUR " + v_str) if v_str != "--" else "--", "color:#0a0a0a;font-weight:700")
         + _td(analyst_html)
         + "</tr>"
     )
@@ -637,7 +641,7 @@ def _table(rows: str) -> str:
                     ["Ticker", "Name", "Price EUR", "Day Chg", "Shares", "Value EUR", "Analyst"])
     return (
         "<table style='width:100%;border-collapse:collapse;"
-        "background:#1c2330;border-radius:8px;overflow:hidden'>"
+        "background:#87CEFB;border-radius:8px;overflow:hidden'>"
         "<thead><tr>" + heads + "</tr></thead><tbody>" + rows + "</tbody></table>"
     )
 
