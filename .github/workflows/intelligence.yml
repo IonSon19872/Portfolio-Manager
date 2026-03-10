@@ -23,14 +23,14 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - run: pip install -r requirements.txt
+      - run: pip install requests yfinance
+      
 
       - name: Run intelligence check (ratings + news email)
         env:
           EMAIL_FROM:      ${{ secrets.EMAIL_FROM }}
           EMAIL_PASSWORD:  ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_TO:        ${{ secrets.EMAIL_TO }}
-          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
         run: python scripts/intelligence.py
 
       - name: Commit intelligence data
