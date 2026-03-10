@@ -1,6 +1,6 @@
 """
 shared.py -- All data via yfinance (free, no API key needed)
-Supports all exchanges: US, XETRA, Euronext, LSE, AMS, STO, etc.
+Supports all exchanges: US, XETRA (.DE), Euronext (.PA), LSE (.L), AMS (.AS), STO (.ST)
 """
 
 import os, json, time, smtplib, logging
@@ -88,26 +88,21 @@ def save_json(path: Path, data):
 # -- FX to EUR ----------------------------------------------------------------
 _fx_cache: dict = {}
 
+
 def _get_fx_rate(currency: str) -> float:
-    """Convert 1 unit of currency to EUR using yfinance."""
     ccy = (currency or "USD").upper().strip()
     if ccy == "EUR":
         return 1.0
-    if ccy in _fx_cache:
-        return _fx_cache[ccy]
-    if ccy == "GBP":
-        # yfinance GBP/EUR
-        pair = "GBPEUR=X"
-    elif ccy == "GBX":
-        # pence: divide by 100 then convert GBP
+    if ccy == "GBX":
         rate = _get_fx_rate("GBP") / 100.0
         _fx_cache["GBX"] = rate
         return rate
-    else:
-        pair = ccy + "EUR=X"
+    if ccy in _fx_cache:
+        return _fx_cache[ccy]
     try:
-        t = yf.Ticker(pair)
-        fi = t.fast_info
+        pair = "GBPEUR=X" if ccy == "GBP" else ccy + "EUR=X"
+        t    = yf.Ticker(pair)
+        fi   = t.fast_info
         rate = float(fi.last_price or fi.previous_close or 1.0)
         _fx_cache[ccy] = rate
         return rate
@@ -126,11 +121,7 @@ def to_eur(price, currency: str) -> float:
 
 
 # -- STOCK DATA ---------------------------------------------------------------
-def get_stock_data(holding: dict, _api_key: str = "") -> dict:
-    """
-    Fetch price + info for one holding using yfinance.
-    Works for all exchanges: US, .DE, .PA, .L, .AS, .ST, etc.
-    """
+def get_stock_data(holding: dict, _ignored: str = "") -> dict:
     ticker = holding["ticker"]
     log.info("  " + ticker)
 
@@ -140,8 +131,8 @@ def get_stock_data(holding: dict, _api_key: str = "") -> dict:
     }
 
     try:
-        t    = yf.Ticker(ticker)
-        fi   = t.fast_info
+        t     = yf.Ticker(ticker)
+        fi    = t.fast_info
         price = float(fi.last_price or fi.previous_close or 0)
         prev  = float(fi.previous_close or fi.last_price or 0)
 
@@ -149,13 +140,11 @@ def get_stock_data(holding: dict, _api_key: str = "") -> dict:
             out["error"] = "No price data from yfinance for " + ticker
             return out
 
-        # Use previous_close as price if market is closed and last_price == prev
         currency = str(fi.currency or "USD").upper()
         if currency == "GBP" and price > 500:
-            # LSE quotes in pence for some stocks — convert
             currency = "GBX"
 
-        chg_pct = ((price - prev) / prev * 100) if prev else 0.0
+        chg_pct   = ((price - prev) / prev * 100) if prev else 0.0
         price_eur = to_eur(price, currency)
         prev_eur  = to_eur(prev,  currency)
 
@@ -168,15 +157,14 @@ def get_stock_data(holding: dict, _api_key: str = "") -> dict:
             "prev_eur":     round(prev_eur,  2),
         })
 
-        # Analyst info from yfinance (available for most stocks)
         try:
             info = t.info
-            out["name"]     = info.get("shortName") or info.get("longName") or out["name"]
-            out["sector"]   = info.get("sector", "")
-            out["country"]  = info.get("country", "")
-            out["pe_ratio"] = info.get("trailingPE") or info.get("forwardPE")
-            out["beta"]     = info.get("beta")
-            out["eps_ttm"]  = info.get("trailingEps")
+            out["name"]           = info.get("shortName") or info.get("longName") or out["name"]
+            out["sector"]         = info.get("sector", "")
+            out["country"]        = info.get("country", "")
+            out["pe_ratio"]       = info.get("trailingPE") or info.get("forwardPE")
+            out["beta"]           = info.get("beta")
+            out["eps_ttm"]        = info.get("trailingEps")
             out["dividend_yield"] = info.get("dividendYield")
             out["market_cap"]     = info.get("marketCap")
 
@@ -189,24 +177,22 @@ def get_stock_data(holding: dict, _api_key: str = "") -> dict:
                 }
                 out["recommendation"] = rec_map.get(rec_key.lower(), "hold")
 
-            # Analyst counts
-            sb  = info.get("numberOfAnalystOpinions", 0) or 0
-            out["analyst_total"] = sb
-            # yfinance doesn't break out buy/hold/sell counts — use rec summary
+            out["analyst_total"] = info.get("numberOfAnalystOpinions", 0) or 0
+
             target_mean = info.get("targetMeanPrice")
             target_high = info.get("targetHighPrice")
             target_low  = info.get("targetLowPrice")
             if target_mean:
-                fx = _get_fx_rate(currency)
-                out["analyst_target_mean"] = round(float(target_mean) * fx, 2)
-                out["analyst_target_high"] = round(float(target_high) * fx, 2) if target_high else None
-                out["analyst_target_low"]  = round(float(target_low)  * fx, 2) if target_low  else None
+                out["analyst_target_mean"] = round(to_eur(target_mean, currency), 2)
+                out["analyst_target_high"] = round(to_eur(target_high, currency), 2) if target_high else None
+                out["analyst_target_low"]  = round(to_eur(target_low,  currency), 2) if target_low  else None
 
             w52_high = info.get("fiftyTwoWeekHigh")
             w52_low  = info.get("fiftyTwoWeekLow")
             if w52_high:
                 out["52w_high"] = round(to_eur(w52_high, currency), 2)
                 out["52w_low"]  = round(to_eur(w52_low,  currency), 2)
+
         except Exception as e:
             log.warning("  info fetch failed for " + ticker + ": " + str(e))
 
@@ -218,8 +204,8 @@ def get_stock_data(holding: dict, _api_key: str = "") -> dict:
     return out
 
 
-# -- ANALYST UPGRADES (yfinance) ----------------------------------------------
-def get_analyst_upgrades(ticker: str, _api_key: str = "", days_back: int = 7) -> list:
+# -- ANALYST UPGRADES ---------------------------------------------------------
+def get_analyst_upgrades(ticker: str, _ignored: str = "", days_back: int = 7) -> list:
     cutoff = (date.today() - timedelta(days=days_back)).isoformat()
     try:
         t  = yf.Ticker(ticker)
@@ -228,13 +214,16 @@ def get_analyst_upgrades(ticker: str, _api_key: str = "", days_back: int = 7) ->
             return []
         results = []
         for idx, row in df.iterrows():
-            d = str(idx.date()) if hasattr(idx, 'date') else str(idx)[:10]
+            d = str(idx.date()) if hasattr(idx, "date") else str(idx)[:10]
             if d < cutoff:
                 continue
             fg = str(row.get("FromGrade", "") or "")
             tg = str(row.get("ToGrade",   "") or "")
-            action = "up" if tg.lower() in ["buy","outperform","overweight","strong buy"] else \
-                     "down" if tg.lower() in ["sell","underperform","underweight"] else "reit"
+            action = (
+                "up"   if tg.lower() in ["buy", "outperform", "overweight", "strong buy"]
+                else "down" if tg.lower() in ["sell", "underperform", "underweight"]
+                else "reit"
+            )
             results.append({
                 "date":       d,
                 "firm":       str(row.get("Firm", "") or ""),
@@ -248,8 +237,8 @@ def get_analyst_upgrades(ticker: str, _api_key: str = "", days_back: int = 7) ->
         return []
 
 
-# -- COMPANY NEWS (yfinance) --------------------------------------------------
-def get_company_news(ticker: str, _api_key: str = "",
+# -- COMPANY NEWS -------------------------------------------------------------
+def get_company_news(ticker: str, _ignored: str = "",
                      days_back: int = 1, max_articles: int = 3) -> list:
     cutoff = (date.today() - timedelta(days=days_back)).isoformat()
     try:
@@ -282,8 +271,8 @@ def get_company_news(ticker: str, _api_key: str = "",
         return []
 
 
-# -- CALENDAR (stubs — yfinance has limited calendar data) --------------------
-def get_earnings_calendar(ticker: str, _api_key: str = "",
+# -- CALENDAR -----------------------------------------------------------------
+def get_earnings_calendar(ticker: str, _ignored: str = "",
                            from_date: str = "", to_date: str = "") -> list:
     try:
         t   = yf.Ticker(ticker)
@@ -293,17 +282,24 @@ def get_earnings_calendar(ticker: str, _api_key: str = "",
         ed = cal.get("Earnings Date")
         if not ed:
             return []
-        d = str(ed[0].date()) if hasattr(ed[0], 'date') else str(ed[0])[:10]
+        d = str(ed[0].date()) if hasattr(ed[0], "date") else str(ed[0])[:10]
         if from_date <= d <= to_date:
-            return [{"date": d, "hour": "", "eps_estimate": cal.get("EPS Estimate"),
-                     "eps_actual": None, "revenue_est": cal.get("Revenue Estimate"),
-                     "revenue_act": None, "quarter": None, "year": None}]
+            return [{
+                "date":         d,
+                "hour":         "",
+                "eps_estimate": cal.get("EPS Estimate"),
+                "eps_actual":   None,
+                "revenue_est":  cal.get("Revenue Estimate"),
+                "revenue_act":  None,
+                "quarter":      None,
+                "year":         None,
+            }]
     except Exception:
         pass
     return []
 
 
-def get_dividends(ticker: str, _api_key: str = "",
+def get_dividends(ticker: str, _ignored: str = "",
                   from_date: str = "", to_date: str = "") -> list:
     try:
         t  = yf.Ticker(ticker)
@@ -312,7 +308,7 @@ def get_dividends(ticker: str, _api_key: str = "",
             return []
         results = []
         for idx, val in df.items():
-            d = str(idx.date()) if hasattr(idx, 'date') else str(idx)[:10]
+            d = str(idx.date()) if hasattr(idx, "date") else str(idx)[:10]
             if from_date <= d <= to_date:
                 results.append({
                     "ex_date":  d,
@@ -326,7 +322,7 @@ def get_dividends(ticker: str, _api_key: str = "",
         return []
 
 
-def get_stock_splits(ticker: str, _api_key: str = "",
+def get_stock_splits(ticker: str, _ignored: str = "",
                      from_date: str = "", to_date: str = "") -> list:
     try:
         t  = yf.Ticker(ticker)
@@ -335,7 +331,7 @@ def get_stock_splits(ticker: str, _api_key: str = "",
             return []
         results = []
         for idx, val in df.items():
-            d = str(idx.date()) if hasattr(idx, 'date') else str(idx)[:10]
+            d = str(idx.date()) if hasattr(idx, "date") else str(idx)[:10]
             if from_date <= d <= to_date:
                 results.append({"date": d, "ratio": str(val) + ":1"})
         return results
@@ -343,9 +339,9 @@ def get_stock_splits(ticker: str, _api_key: str = "",
         return []
 
 
-# -- These are kept for backward compatibility with intelligence.py -----------
+# -- kept for any legacy import -----------------------------------------------
 def to_finnhub_symbol(ticker: str) -> str:
-    return ticker  # not needed with yfinance
+    return ticker
 
 
 # -- EMAIL --------------------------------------------------------------------
@@ -388,6 +384,7 @@ _BASE = (
     "color:#f0f2f5;padding:32px;max-width:680px;margin:auto;border-radius:12px"
 )
 
+
 def _TH(s):
     return (
         "<th style='padding:8px 12px;text-align:left;background:#1c2330;"
@@ -395,20 +392,25 @@ def _TH(s):
         "letter-spacing:1px'>" + s + "</th>"
     )
 
+
 def _td(v, x=""):
-    return "<td style='padding:8px 12px;border-bottom:1px solid #21293a;" + x + "'>" + str(v) + "</td>"
+    return (
+        "<td style='padding:8px 12px;border-bottom:1px solid #21293a;" + x + "'>"
+        + str(v) + "</td>"
+    )
 
 
 def _holding_row(s: dict) -> str:
     chg          = s.get("change_pct") or 0
     price_native = s.get("price_native") or 0
     prev_close   = s.get("prev_close")   or 0
-    market_closed = (abs(chg) < 0.001 and price_native > 0 and abs(price_native - prev_close) < 0.001)
+    market_closed = (abs(chg) < 0.001 and price_native > 0
+                     and abs(price_native - prev_close) < 0.001)
     color = "#7d8fa8" if market_closed else ("#52d68a" if chg >= 0 else "#f56565")
     arrow = "+" if chg >= 0 else "-"
 
-    rec    = (s.get("recommendation") or "").replace("_", " ")
-    rc     = "#52d68a" if "buy" in rec else "#f56565" if "sell" in rec else "#f6ad55"
+    rec = (s.get("recommendation") or "").replace("_", " ")
+    rc  = "#52d68a" if "buy" in rec else "#f56565" if "sell" in rec else "#f6ad55"
 
     p_raw  = s.get("price_eur")
     v_raw  = s.get("value_eur")
@@ -418,13 +420,19 @@ def _holding_row(s: dict) -> str:
     if v_str == "--" and p_str != "--" and shares:
         v_str = "{:.2f}".format(float(p_str) * float(shares))
 
-    closed_badge = "<span style='color:#4a5568;font-size:9px'> mkt closed</span>" if market_closed else ""
-    chg_cell = (
-        "<span style='color:" + color + "'>" +
-        arrow + " " + "{:.2f}".format(abs(chg)) + "%" +
-        "</span>" + closed_badge
+    closed_badge = (
+        "<span style='color:#4a5568;font-size:9px'> mkt closed</span>"
+        if market_closed else ""
     )
-    rec_cell = "<span style='color:" + rc + ";font-size:10px;text-transform:uppercase'>" + (rec or "--") + "</span>"
+    chg_cell = (
+        "<span style='color:" + color + "'>"
+        + arrow + " " + "{:.2f}".format(abs(chg)) + "%"
+        + "</span>" + closed_badge
+    )
+    rec_cell = (
+        "<span style='color:" + rc + ";font-size:10px;text-transform:uppercase'>"
+        + (rec or "--") + "</span>"
+    )
 
     return (
         "<tr>"
@@ -440,9 +448,11 @@ def _holding_row(s: dict) -> str:
 
 
 def _table(rows: str) -> str:
-    heads = "".join(_TH(h) for h in ["Ticker","Name","Price EUR","Day Chg","Shares","Value EUR","Analyst"])
+    heads = "".join(_TH(h) for h in
+                    ["Ticker", "Name", "Price EUR", "Day Chg", "Shares", "Value EUR", "Analyst"])
     return (
-        "<table style='width:100%;border-collapse:collapse;background:#1c2330;border-radius:8px;overflow:hidden'>"
+        "<table style='width:100%;border-collapse:collapse;"
+        "background:#1c2330;border-radius:8px;overflow:hidden'>"
         "<thead><tr>" + heads + "</tr></thead><tbody>" + rows + "</tbody></table>"
     )
 
@@ -454,13 +464,18 @@ def digest_html(snapshot: dict, label: str) -> str:
     now      = datetime.utcnow().strftime("%A, %d %B %Y - %H:%M UTC")
     return (
         "<div style='" + _BASE + "'>"
-        "<div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px'>Portfolio Digest</div>"
+        "<div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;"
+        "letter-spacing:2px;margin-bottom:6px'>Portfolio Digest</div>"
         "<h1 style='font-size:20px;color:#4f9ef8;margin:0 0 4px'>Portfolio Digest - " + label + "</h1>"
         "<p style='color:#7d8fa8;margin:0 0 20px'>" + now + "</p>"
-        "<p style='font-size:24px;color:#52d68a;margin:0 0 24px'>Total: <strong>EUR " + "{:,.2f}".format(total) + "</strong></p>"
-        "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>Stocks</h2>" + _table(stk_rows)
-        + "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 10px'>ETFs</h2>" + _table(etf_rows)
-        + "<p style='color:#4a5568;font-size:10px;margin-top:24px'>Portfolio Intelligence - GitHub Actions - Yahoo Finance</p>"
+        "<p style='font-size:24px;color:#52d68a;margin:0 0 24px'>Total: <strong>EUR "
+        + "{:,.2f}".format(total) + "</strong></p>"
+        "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>Stocks</h2>"
+        + _table(stk_rows)
+        + "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 10px'>ETFs</h2>"
+        + _table(etf_rows)
+        + "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
+        "Portfolio Intelligence - GitHub Actions - Yahoo Finance</p>"
         "</div>"
     )
 
@@ -472,15 +487,20 @@ def movement_html(ticker: str, name: str, price_now: float,
     now   = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     return (
         "<div style='" + _BASE + "'>"
-        "<h1 style='font-size:26px;color:" + color + ";margin:0 0 8px'>" + arrow + " " + ticker + "</h1>"
+        "<h1 style='font-size:26px;color:" + color + ";margin:0 0 8px'>"
+        + arrow + " " + ticker + "</h1>"
         "<p style='color:#7d8fa8;margin:0 0 20px'>" + name + "</p>"
-        "<table style='width:100%;border-collapse:collapse;background:#1c2330;border-radius:8px;overflow:hidden'>"
+        "<table style='width:100%;border-collapse:collapse;"
+        "background:#1c2330;border-radius:8px;overflow:hidden'>"
         "<tr><td style='padding:12px 16px;color:#7d8fa8'>Previous close</td>"
-        "<td style='padding:12px 16px;font-weight:600'>EUR " + "{:.2f}".format(price_prev) + "</td></tr>"
+        "<td style='padding:12px 16px;font-weight:600'>EUR "
+        + "{:.2f}".format(price_prev) + "</td></tr>"
         "<tr><td style='padding:12px 16px;color:#7d8fa8'>Current price</td>"
-        "<td style='padding:12px 16px;font-weight:600;color:" + color + "'>EUR " + "{:.2f}".format(price_now) + "</td></tr>"
+        "<td style='padding:12px 16px;font-weight:600;color:" + color + "'>EUR "
+        + "{:.2f}".format(price_now) + "</td></tr>"
         "<tr><td style='padding:12px 16px;color:#7d8fa8'>Change</td>"
-        "<td style='padding:12px 16px;font-size:22px;font-weight:700;color:" + color + "'>" + arrow + " " + "{:.2f}".format(abs(move_pct)) + "%</td></tr>"
+        "<td style='padding:12px 16px;font-size:22px;font-weight:700;color:" + color + "'>"
+        + arrow + " " + "{:.2f}".format(abs(move_pct)) + "%</td></tr>"
         "</table>"
         "<p style='color:#4a5568;font-size:10px;margin-top:20px'>" + now + "</p>"
         "</div>"
@@ -489,14 +509,14 @@ def movement_html(ticker: str, name: str, price_now: float,
 
 def rating_change_html(ticker: str, name: str, changes: list) -> str:
     def _row(c):
-        to_g = c.get("to_grade", "")
-        tl   = to_g.lower()
-        col  = (
-            "#52d68a" if any(w in tl for w in ["buy","outperform","overweight","positive"])
-            else "#f56565" if any(w in tl for w in ["sell","underperform","underweight","negative"])
+        to_g   = c.get("to_grade", "")
+        tl     = to_g.lower()
+        col    = (
+            "#52d68a" if any(w in tl for w in ["buy", "outperform", "overweight", "positive"])
+            else "#f56565" if any(w in tl for w in ["sell", "underperform", "underweight", "negative"])
             else "#f6ad55"
         )
-        action    = c.get("action","").lower()
+        action = c.get("action", "").lower()
         badge_map = {
             "up":   "<span style='color:#52d68a;font-size:10px'>UPGRADE</span>",
             "down": "<span style='color:#f56565;font-size:10px'>DOWNGRADE</span>",
@@ -506,22 +526,30 @@ def rating_change_html(ticker: str, name: str, changes: list) -> str:
         bd = "1px solid #21293a"
         return (
             "<tr>"
-            "<td style='padding:9px 12px;border-bottom:" + bd + ";color:#7d8fa8'>" + c.get("date","") + "</td>"
-            "<td style='padding:9px 12px;border-bottom:" + bd + ";font-weight:600'>" + c.get("firm","") + "</td>"
-            "<td style='padding:9px 12px;border-bottom:" + bd + ";color:#7d8fa8;text-decoration:line-through'>" + (c.get("from_grade") or "--") + "</td>"
+            "<td style='padding:9px 12px;border-bottom:" + bd + ";color:#7d8fa8'>"
+            + c.get("date", "") + "</td>"
+            "<td style='padding:9px 12px;border-bottom:" + bd + ";font-weight:600'>"
+            + c.get("firm", "") + "</td>"
+            "<td style='padding:9px 12px;border-bottom:" + bd + ";"
+            "color:#7d8fa8;text-decoration:line-through'>"
+            + (c.get("from_grade") or "--") + "</td>"
             "<td style='padding:9px 12px;border-bottom:" + bd + "'>-></td>"
-            "<td style='padding:9px 12px;border-bottom:" + bd + ";color:" + col + ";font-weight:700'>" + to_g + "</td>"
-            "<td style='padding:9px 12px;border-bottom:" + bd + "'>" + badge_map.get(action,"") + "</td>"
+            "<td style='padding:9px 12px;border-bottom:" + bd + ";color:" + col + ";"
+            "font-weight:700'>" + to_g + "</td>"
+            "<td style='padding:9px 12px;border-bottom:" + bd + "'>"
+            + badge_map.get(action, "") + "</td>"
             "</tr>"
         )
+
     rows  = "".join(_row(c) for c in changes)
-    heads = "".join(_TH(h) for h in ["Date","Firm","From","","To","Action"])
+    heads = "".join(_TH(h) for h in ["Date", "Firm", "From", "", "To", "Action"])
     now   = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     return (
         "<div style='" + _BASE + "'>"
         "<h1 style='font-size:24px;color:#b794f4;margin:0 0 6px'>" + ticker + "</h1>"
         "<p style='color:#7d8fa8;margin:0 0 24px'>" + name + "</p>"
-        "<table style='width:100%;border-collapse:collapse;background:#1c2330;border-radius:8px;overflow:hidden'>"
+        "<table style='width:100%;border-collapse:collapse;"
+        "background:#1c2330;border-radius:8px;overflow:hidden'>"
         "<thead><tr>" + heads + "</tr></thead><tbody>" + rows + "</tbody></table>"
         "<p style='color:#4a5568;font-size:10px;margin-top:20px'>" + now + "</p>"
         "</div>"
@@ -530,50 +558,63 @@ def rating_change_html(ticker: str, name: str, changes: list) -> str:
 
 def news_digest_html(holdings_with_news: list, run_label: str) -> str:
     now = datetime.utcnow().strftime("%A, %d %B %Y - %H:%M UTC")
+
     def _section(h):
         articles = h.get("news", [])
         if not articles:
             return ""
         rows = ""
         for a in articles:
-            src   = a.get("source","")
-            d     = a.get("date","")
+            src   = a.get("source", "")
+            d     = a.get("date", "")
             summ  = (a.get("summary") or "")[:160]
-            if summ and not summ.endswith((".",  "...")):
+            if summ and not summ.endswith((".", "...")):
                 summ += "..."
-            url   = a.get("url","#")
-            title = a.get("title","")
+            url   = a.get("url", "#")
+            title = a.get("title", "")
             rows += (
-                "<tr><td style='padding:12px 14px;border-bottom:1px solid #21293a;vertical-align:top'>"
-                "<a href='" + url + "' style='color:#4f9ef8;text-decoration:none;font-weight:600;font-size:12.5px;display:block;margin-bottom:5px'>" + title + "</a>"
+                "<tr><td style='padding:12px 14px;border-bottom:1px solid #21293a;"
+                "vertical-align:top'>"
+                "<a href='" + url + "' style='color:#4f9ef8;text-decoration:none;"
+                "font-weight:600;font-size:12.5px;display:block;margin-bottom:5px'>"
+                + title + "</a>"
                 "<span style='color:#52d68a;font-size:11px'>" + src + "</span>"
-                "<span style='color:#7d8fa8;font-size:11px'>" + (" - " + d if d else "") + "</span>"
-                + ("<div style='color:#7d8fa8;font-size:11px;margin-top:4px'>" + summ + "</div>" if summ else "")
+                "<span style='color:#7d8fa8;font-size:11px'>"
+                + (" - " + d if d else "") + "</span>"
+                + ("<div style='color:#7d8fa8;font-size:11px;margin-top:4px'>"
+                   + summ + "</div>" if summ else "")
                 + "</td></tr>"
             )
         return (
             "<div style='margin-bottom:20px'>"
             "<span style='color:#4f9ef8;font-weight:600'>" + h["ticker"] + "</span>"
-            " <span style='color:#7d8fa8;font-size:11px'>" + h.get("name","") + "</span>"
-            "<table style='width:100%;border-collapse:collapse;background:#1c2330;border-radius:8px;overflow:hidden;margin-top:8px'>"
+            " <span style='color:#7d8fa8;font-size:11px'>" + h.get("name", "") + "</span>"
+            "<table style='width:100%;border-collapse:collapse;background:#1c2330;"
+            "border-radius:8px;overflow:hidden;margin-top:8px'>"
             "<tbody>" + rows + "</tbody></table></div>"
         )
+
     sections = "".join(_section(h) for h in holdings_with_news)
-    total    = sum(len(h.get("news",[])) for h in holdings_with_news)
+    total    = sum(len(h.get("news", [])) for h in holdings_with_news)
     return (
         "<div style='" + _BASE + "'>"
-        "<h1 style='font-size:20px;color:#52d68a;margin:0 0 4px'>News Digest - " + run_label + "</h1>"
+        "<h1 style='font-size:20px;color:#52d68a;margin:0 0 4px'>"
+        "News Digest - " + run_label + "</h1>"
         "<p style='color:#7d8fa8;margin:0 0 6px'>" + now + "</p>"
-        "<p style='color:#7d8fa8;font-size:11px;margin:0 0 24px'>" + str(total) + " article(s) across " + str(len(holdings_with_news)) + " holding(s)</p>"
+        "<p style='color:#7d8fa8;font-size:11px;margin:0 0 24px'>"
+        + str(total) + " article(s) across "
+        + str(len(holdings_with_news)) + " holding(s)</p>"
         + sections
-        + "<p style='color:#4a5568;font-size:10px;margin-top:16px'>Portfolio Intelligence - GitHub Actions</p>"
+        + "<p style='color:#4a5568;font-size:10px;margin-top:16px'>"
+        "Portfolio Intelligence - GitHub Actions</p>"
         "</div>"
     )
 
 
-def saturday_summary_html(snapshot: dict, intel_data: dict, week_movements: list) -> str:
-    now       = datetime.utcnow().strftime("%A, %d %B %Y - %H:%M UTC")
-    total_eur = snapshot.get("total_eur", 0)
+def saturday_summary_html(snapshot: dict, intel_data: dict,
+                           week_movements: list) -> str:
+    now        = datetime.utcnow().strftime("%A, %d %B %Y - %H:%M UTC")
+    total_eur  = snapshot.get("total_eur", 0)
     week_start = snapshot.get("week_start_eur")
     week_chg   = ((total_eur - week_start) / week_start * 100) if week_start else None
     chg_color  = "#52d68a" if (week_chg or 0) >= 0 else "#f56565"
@@ -581,43 +622,56 @@ def saturday_summary_html(snapshot: dict, intel_data: dict, week_movements: list
     week_chg_html = ""
     if week_chg is not None:
         week_chg_html = (
-            "<div><div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Week Change</div>"
-            "<div style='font-size:22px;color:" + chg_color + ";font-weight:700'>" +
-            ("+" if week_chg >= 0 else "") + "{:.2f}".format(week_chg) + "%</div></div>"
+            "<div><div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;"
+            "letter-spacing:1px;margin-bottom:6px'>Week Change</div>"
+            "<div style='font-size:22px;color:" + chg_color + ";font-weight:700'>"
+            + ("+" if week_chg >= 0 else "") + "{:.2f}".format(week_chg) + "%</div></div>"
         )
 
     week_block = (
-        "<div style='background:#1c2330;border-radius:10px;padding:20px 24px;margin-bottom:24px;"
-        "display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px'>"
-        "<div><div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px'>Portfolio Value</div>"
-        "<div style='font-size:28px;color:#52d68a;font-weight:700'>EUR " + "{:,.2f}".format(total_eur) + "</div></div>"
+        "<div style='background:#1c2330;border-radius:10px;padding:20px 24px;"
+        "margin-bottom:24px;display:flex;justify-content:space-between;"
+        "align-items:center;flex-wrap:wrap;gap:12px'>"
+        "<div><div style='font-size:10px;color:#7d8fa8;text-transform:uppercase;"
+        "letter-spacing:1px;margin-bottom:6px'>Portfolio Value</div>"
+        "<div style='font-size:28px;color:#52d68a;font-weight:700'>EUR "
+        + "{:,.2f}".format(total_eur) + "</div></div>"
         + week_chg_html + "</div>"
     )
 
     movers_block = ""
     if week_movements:
-        top  = sorted(week_movements, key=lambda x: abs(x.get("move_pct",0)), reverse=True)[:8]
+        top  = sorted(week_movements, key=lambda x: abs(x.get("move_pct", 0)), reverse=True)[:8]
         rows = ""
         for m in top:
             mp  = m.get("move_pct", 0)
             col = "#52d68a" if mp >= 0 else "#f56565"
             rows += (
                 "<tr>"
-                "<td style='padding:9px 14px;border-bottom:1px solid #21293a;color:#4f9ef8;font-weight:600'>" + m.get("ticker","") + "</td>"
-                "<td style='padding:9px 14px;border-bottom:1px solid #21293a;color:#7d8fa8'>" + m.get("name","")[:24] + "</td>"
-                "<td style='padding:9px 14px;border-bottom:1px solid #21293a'>EUR " + "{:.2f}".format(m.get("from_eur",0)) + "</td>"
-                "<td style='padding:9px 14px;border-bottom:1px solid #21293a'>EUR " + "{:.2f}".format(m.get("to_eur",0)) + "</td>"
-                "<td style='padding:9px 14px;border-bottom:1px solid #21293a;color:" + col + ";font-weight:700'>" +
-                ("+" if mp >= 0 else "") + "{:.2f}".format(mp) + "%</td>"
+                "<td style='padding:9px 14px;border-bottom:1px solid #21293a;"
+                "color:#4f9ef8;font-weight:600'>" + m.get("ticker", "") + "</td>"
+                "<td style='padding:9px 14px;border-bottom:1px solid #21293a;"
+                "color:#7d8fa8'>" + m.get("name", "")[:24] + "</td>"
+                "<td style='padding:9px 14px;border-bottom:1px solid #21293a'>EUR "
+                + "{:.2f}".format(m.get("from_eur", 0)) + "</td>"
+                "<td style='padding:9px 14px;border-bottom:1px solid #21293a'>EUR "
+                + "{:.2f}".format(m.get("to_eur", 0)) + "</td>"
+                "<td style='padding:9px 14px;border-bottom:1px solid #21293a;"
+                "color:" + col + ";font-weight:700'>"
+                + ("+" if mp >= 0 else "") + "{:.2f}".format(mp) + "%</td>"
                 "</tr>"
             )
         heads = "".join(
-            "<th style='padding:8px 14px;text-align:left;background:#1c2330;color:#7d8fa8;font-size:10px;text-transform:uppercase;letter-spacing:1px'>" + h + "</th>"
-            for h in ["Ticker","Name","Mon Open","Fri Close","Week Chg"]
+            "<th style='padding:8px 14px;text-align:left;background:#1c2330;"
+            "color:#7d8fa8;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+            + h + "</th>"
+            for h in ["Ticker", "Name", "Mon Open", "Fri Close", "Week Chg"]
         )
         movers_block = (
-            "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>Top Movers This Week</h2>"
-            "<table style='width:100%;border-collapse:collapse;background:#1c2330;border-radius:8px;overflow:hidden;margin-bottom:24px'>"
+            "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>"
+            "Top Movers This Week</h2>"
+            "<table style='width:100%;border-collapse:collapse;background:#1c2330;"
+            "border-radius:8px;overflow:hidden;margin-bottom:24px'>"
             "<thead><tr>" + heads + "</tr></thead><tbody>" + rows + "</tbody></table>"
         )
 
@@ -625,94 +679,130 @@ def saturday_summary_html(snapshot: dict, intel_data: dict, week_movements: list
     all_changes = []
     for h in (intel_data.get("holdings") or []):
         for r in (h.get("ratings") or []):
-            if (r.get("date","") >= cutoff and r.get("to_grade")
-                    and (r.get("from_grade","") or "").lower() != r.get("to_grade","").lower()):
-                all_changes.append({**r, "ticker": h["ticker"], "name": h.get("name","")})
-    all_changes.sort(key=lambda x: x.get("date",""), reverse=True)
+            if (r.get("date", "") >= cutoff
+                    and r.get("to_grade")
+                    and (r.get("from_grade", "") or "").lower() != r.get("to_grade", "").lower()):
+                all_changes.append({**r, "ticker": h["ticker"], "name": h.get("name", "")})
+    all_changes.sort(key=lambda x: x.get("date", ""), reverse=True)
 
     ratings_block = ""
     if all_changes:
         def _rcrow(c):
-            to_g = c.get("to_grade","")
-            col  = ("#52d68a" if any(w in to_g.lower() for w in ["buy","outperform","overweight"])
-                    else "#f56565" if any(w in to_g.lower() for w in ["sell","underperform","underweight"])
-                    else "#f6ad55")
-            bd   = "1px solid #21293a"
-            act  = c.get("action","").lower()
-            a_lbl = {"up":"UPGRADE","down":"DOWNGRADE","init":"INIT","reit":"--"}.get(act, act)
-            a_col = {"up":"#52d68a","down":"#f56565","init":"#4f9ef8"}.get(act,"#7d8fa8")
+            to_g  = c.get("to_grade", "")
+            col   = (
+                "#52d68a" if any(w in to_g.lower() for w in ["buy", "outperform", "overweight"])
+                else "#f56565" if any(w in to_g.lower() for w in ["sell", "underperform", "underweight"])
+                else "#f6ad55"
+            )
+            act   = c.get("action", "").lower()
+            a_lbl = {"up": "UPGRADE", "down": "DOWNGRADE", "init": "INIT", "reit": "--"}.get(act, act)
+            a_col = {"up": "#52d68a", "down": "#f56565", "init": "#4f9ef8"}.get(act, "#7d8fa8")
+            bd    = "1px solid #21293a"
             return (
                 "<tr>"
-                "<td style='padding:8px 12px;border-bottom:" + bd + ";color:#4f9ef8;font-weight:600'>" + c.get("ticker","") + "</td>"
-                "<td style='padding:8px 12px;border-bottom:" + bd + ";color:#7d8fa8'>" + c.get("date","") + "</td>"
-                "<td style='padding:8px 12px;border-bottom:" + bd + "'>" + c.get("firm","") + "</td>"
-                "<td style='padding:8px 12px;border-bottom:" + bd + ";color:#7d8fa8;text-decoration:line-through'>" + (c.get("from_grade") or "--") + "</td>"
+                "<td style='padding:8px 12px;border-bottom:" + bd + ";"
+                "color:#4f9ef8;font-weight:600'>" + c.get("ticker", "") + "</td>"
+                "<td style='padding:8px 12px;border-bottom:" + bd + ";"
+                "color:#7d8fa8'>" + c.get("date", "") + "</td>"
+                "<td style='padding:8px 12px;border-bottom:" + bd + "'>"
+                + c.get("firm", "") + "</td>"
+                "<td style='padding:8px 12px;border-bottom:" + bd + ";"
+                "color:#7d8fa8;text-decoration:line-through'>"
+                + (c.get("from_grade") or "--") + "</td>"
                 "<td style='padding:8px 12px;border-bottom:" + bd + "'>-></td>"
-                "<td style='padding:8px 12px;border-bottom:" + bd + ";color:" + col + ";font-weight:700'>" + to_g + "</td>"
-                "<td style='padding:8px 12px;border-bottom:" + bd + ";color:" + a_col + ";font-size:10px'>" + a_lbl + "</td>"
+                "<td style='padding:8px 12px;border-bottom:" + bd + ";color:" + col + ";"
+                "font-weight:700'>" + to_g + "</td>"
+                "<td style='padding:8px 12px;border-bottom:" + bd + ";color:" + a_col + ";"
+                "font-size:10px'>" + a_lbl + "</td>"
                 "</tr>"
             )
         rc_heads = "".join(
-            "<th style='padding:8px 12px;text-align:left;background:#1c2330;color:#7d8fa8;font-size:10px;text-transform:uppercase;letter-spacing:1px'>" + h + "</th>"
-            for h in ["Ticker","Date","Firm","From","","To","Action"]
+            "<th style='padding:8px 12px;text-align:left;background:#1c2330;"
+            "color:#7d8fa8;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+            + h + "</th>"
+            for h in ["Ticker", "Date", "Firm", "From", "", "To", "Action"]
         )
         ratings_block = (
-            "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>Rating Changes This Week</h2>"
-            "<table style='width:100%;border-collapse:collapse;background:#1c2330;border-radius:8px;overflow:hidden;margin-bottom:24px'>"
+            "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>"
+            "Rating Changes This Week</h2>"
+            "<table style='width:100%;border-collapse:collapse;background:#1c2330;"
+            "border-radius:8px;overflow:hidden;margin-bottom:24px'>"
             "<thead><tr>" + rc_heads + "</tr></thead>"
             "<tbody>" + "".join(_rcrow(c) for c in all_changes) + "</tbody></table>"
         )
 
     news_sections = ""
     for h in (intel_data.get("holdings") or []):
-        articles = [a for a in (h.get("news") or []) if a.get("date","") >= cutoff]
+        articles = [a for a in (h.get("news") or []) if a.get("date", "") >= cutoff]
         if not articles:
             continue
         rows = ""
         for a in articles[:4]:
-            url   = a.get("url","#")
-            title = a.get("title","")
-            src   = a.get("source","")
-            dt    = a.get("date","")
+            url   = a.get("url", "#")
+            title = a.get("title", "")
+            src   = a.get("source", "")
+            dt    = a.get("date", "")
             summ  = (a.get("summary") or "")[:140]
             rows += (
-                "<tr><td style='padding:11px 14px;border-bottom:1px solid #21293a;vertical-align:top'>"
-                "<a href='" + url + "' style='color:#4f9ef8;text-decoration:none;font-weight:600;font-size:12px;display:block;margin-bottom:4px'>" + title + "</a>"
+                "<tr><td style='padding:11px 14px;border-bottom:1px solid #21293a;"
+                "vertical-align:top'>"
+                "<a href='" + url + "' style='color:#4f9ef8;text-decoration:none;"
+                "font-weight:600;font-size:12px;display:block;margin-bottom:4px'>"
+                + title + "</a>"
                 "<span style='color:#52d68a;font-size:10px'>" + src + "</span>"
-                "<span style='color:#7d8fa8;font-size:10px'>" + (" - " + dt if dt else "") + "</span>"
-                + ("<div style='color:#7d8fa8;font-size:11px;margin-top:3px'>" + summ + "...</div>" if summ else "")
+                "<span style='color:#7d8fa8;font-size:10px'>"
+                + (" - " + dt if dt else "") + "</span>"
+                + ("<div style='color:#7d8fa8;font-size:11px;margin-top:3px'>"
+                   + summ + "...</div>" if summ else "")
                 + "</td></tr>"
             )
         news_sections += (
             "<div style='margin-bottom:18px'>"
-            "<span style='color:#4f9ef8;font-weight:600'>" + h.get("ticker","") + "</span>"
-            "<span style='color:#7d8fa8;font-size:11px;margin-left:8px'>" + h.get("name","") + "</span>"
-            "<table style='width:100%;border-collapse:collapse;background:#1c2330;border-radius:8px;overflow:hidden;margin-top:8px'>"
+            "<span style='color:#4f9ef8;font-weight:600'>" + h.get("ticker", "") + "</span>"
+            "<span style='color:#7d8fa8;font-size:11px;margin-left:8px'>"
+            + h.get("name", "") + "</span>"
+            "<table style='width:100%;border-collapse:collapse;background:#1c2330;"
+            "border-radius:8px;overflow:hidden;margin-top:8px'>"
             "<tbody>" + rows + "</tbody></table></div>"
         )
     if news_sections:
-        news_sections = "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 12px'>News This Week</h2>" + news_sections
+        news_sections = (
+            "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 12px'>"
+            "News This Week</h2>" + news_sections
+        )
 
     return (
         "<div style='" + _BASE + "'>"
         "<h1 style='font-size:20px;color:#f6ad55;margin:0 0 4px'>Weekly Summary</h1>"
         "<p style='color:#7d8fa8;margin:0 0 24px'>" + now + "</p>"
         + week_block + movers_block + ratings_block + news_sections
-        + "<p style='color:#4a5568;font-size:10px;margin-top:24px'>Portfolio Intelligence - GitHub Actions</p>"
+        + "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
+        "Portfolio Intelligence - GitHub Actions</p>"
         "</div>"
     )
 
 
 def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str:
     def _TH2(s):
-        return "<th style='padding:8px 12px;text-align:left;background:#1c2330;color:#7d8fa8;font-size:10px;text-transform:uppercase;letter-spacing:1px'>" + s + "</th>"
+        return (
+            "<th style='padding:8px 12px;text-align:left;background:#1c2330;"
+            "color:#7d8fa8;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+            + s + "</th>"
+        )
+
     def _td2(v, x=""):
-        return "<td style='padding:9px 12px;border-bottom:1px solid #21293a;" + x + "'>" + str(v) + "</td>"
+        return (
+            "<td style='padding:9px 12px;border-bottom:1px solid #21293a;" + x + "'>"
+            + str(v) + "</td>"
+        )
+
     def _section(title, color, rows_html, cols):
         heads = "".join(_TH2(c) for c in cols)
         return (
-            "<h2 style='font-size:14px;color:" + color + ";margin:0 0 10px'>" + title + "</h2>"
-            "<table style='width:100%;border-collapse:collapse;background:#1c2330;border-radius:8px;overflow:hidden;margin-bottom:24px'>"
+            "<h2 style='font-size:14px;color:" + color + ";margin:0 0 10px'>"
+            + title + "</h2>"
+            "<table style='width:100%;border-collapse:collapse;background:#1c2330;"
+            "border-radius:8px;overflow:hidden;margin-bottom:24px'>"
             "<thead><tr>" + heads + "</tr></thead><tbody>" + rows_html + "</tbody></table>"
         )
 
@@ -721,35 +811,71 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
         rows = ""
         for e in calendar["earnings"]:
             eps = ("$" + "{:.2f}".format(e["eps_estimate"])) if e.get("eps_estimate") is not None else "--"
-            rev = ("$" + "{:.1f}".format(e["revenue_est"]/1e9) + "B") if (e.get("revenue_est") and e["revenue_est"] > 1e6) else "--"
+            rev = ("$" + "{:.1f}".format(e["revenue_est"] / 1e9) + "B") if (e.get("revenue_est") and e["revenue_est"] > 1e6) else "--"
             rows += (
-                "<tr>" + _td2(e.get("date",""),"color:#7d8fa8") + _td2(e.get("ticker",""),"color:#4f9ef8;font-weight:600")
-                + _td2(e.get("name","")[:22],"color:#7d8fa8") + _td2(eps,"color:#f6ad55") + _td2(rev,"color:#7d8fa8") + "</tr>"
+                "<tr>"
+                + _td2(e.get("date", ""),      "color:#7d8fa8")
+                + _td2(e.get("ticker", ""),     "color:#4f9ef8;font-weight:600")
+                + _td2(e.get("name", "")[:22],  "color:#7d8fa8")
+                + _td2(eps,                      "color:#f6ad55")
+                + _td2(rev,                      "color:#7d8fa8")
+                + "</tr>"
             )
-        earnings_block = _section("Earnings Reports Next Week","#f6ad55",rows,["Date","Ticker","Company","EPS Est.","Rev Est."])
+        earnings_block = _section(
+            "Earnings Reports Next Week", "#f6ad55", rows,
+            ["Date", "Ticker", "Company", "EPS Est.", "Rev Est."]
+        )
 
     dividends_block = ""
     if calendar.get("dividends"):
         rows = ""
         for d in calendar["dividends"]:
-            amt = ((d.get("currency","") + " " + "{:.4f}".format(d["amount"])) if d.get("amount") is not None else "--")
-            rows += "<tr>" + _td2(d.get("ex_date",""),"color:#7d8fa8") + _td2(d.get("ticker",""),"color:#4f9ef8;font-weight:600") + _td2(d.get("name","")[:22],"color:#7d8fa8") + _td2(amt,"color:#52d68a") + "</tr>"
-        dividends_block = _section("Ex-Dividend Dates Next Week","#52d68a",rows,["Ex-Date","Ticker","Company","Amount"])
+            amt = ((d.get("currency", "") + " " + "{:.4f}".format(d["amount"]))
+                   if d.get("amount") is not None else "--")
+            rows += (
+                "<tr>"
+                + _td2(d.get("ex_date", ""),   "color:#7d8fa8")
+                + _td2(d.get("ticker", ""),     "color:#4f9ef8;font-weight:600")
+                + _td2(d.get("name", "")[:22],  "color:#7d8fa8")
+                + _td2(amt,                      "color:#52d68a")
+                + "</tr>"
+            )
+        dividends_block = _section(
+            "Ex-Dividend Dates Next Week", "#52d68a", rows,
+            ["Ex-Date", "Ticker", "Company", "Amount"]
+        )
 
     splits_block = ""
     if calendar.get("splits"):
         rows = ""
         for s in calendar["splits"]:
-            rows += "<tr>" + _td2(s.get("date",""),"color:#7d8fa8") + _td2(s.get("ticker",""),"color:#4f9ef8;font-weight:600") + _td2(s.get("name","")[:22],"color:#7d8fa8") + _td2(s.get("ratio","--"),"color:#b794f4;font-weight:600") + "</tr>"
-        splits_block = _section("Stock Splits Next Week","#b794f4",rows,["Date","Ticker","Company","Ratio"])
+            rows += (
+                "<tr>"
+                + _td2(s.get("date", ""),      "color:#7d8fa8")
+                + _td2(s.get("ticker", ""),     "color:#4f9ef8;font-weight:600")
+                + _td2(s.get("name", "")[:22],  "color:#7d8fa8")
+                + _td2(s.get("ratio", "--"),     "color:#b794f4;font-weight:600")
+                + "</tr>"
+            )
+        splits_block = _section(
+            "Stock Splits Next Week", "#b794f4", rows,
+            ["Date", "Ticker", "Company", "Ratio"]
+        )
 
     if not earnings_block and not dividends_block and not splits_block:
-        body = "<div style='background:#1c2330;border-radius:8px;padding:18px 20px;color:#7d8fa8;font-size:12px;margin-bottom:24px'>No earnings, dividends, or splits scheduled for your holdings next week (" + next_mon + " - " + next_fri + ").</div>"
+        body = (
+            "<div style='background:#1c2330;border-radius:8px;padding:18px 20px;"
+            "color:#7d8fa8;font-size:12px;margin-bottom:24px'>"
+            "No earnings, dividends, or splits scheduled for your holdings "
+            "next week (" + next_mon + " - " + next_fri + ").</div>"
+        )
     else:
         body = earnings_block + dividends_block + splits_block
 
     return (
-        "<h2 style='font-size:15px;color:#f0f2f5;margin:0 0 4px'>Next Week's Important Dates</h2>"
-        "<p style='color:#7d8fa8;font-size:11px;margin:0 0 16px'>" + next_mon + " - " + next_fri + "</p>"
+        "<h2 style='font-size:15px;color:#f0f2f5;margin:0 0 4px'>"
+        "Next Week's Important Dates</h2>"
+        "<p style='color:#7d8fa8;font-size:11px;margin:0 0 16px'>"
+        + next_mon + " - " + next_fri + "</p>"
         + body
     )
