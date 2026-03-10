@@ -6,9 +6,16 @@
   "GOOG": {},
   "AIR.PA": {},
   "HO.PA": {},
-  "NVDA": {},
+  "NVDA": {
+    "2026-03-05|Tigress Financial|Strong Buy|Strong Buy": true,
+    "2026-03-03|Wedbush|Outperform|Outperform": true
+  },
   "AMZN": {},
-  "AAPL": {},
+  "AAPL": {
+    "2026-03-05|Wedbush|Outperform|Outperform": true,
+    "2026-03-05|Rosenblatt|Neutral|Neutral": true,
+    "2026-03-03|Barclays|Underweight|Underweight": true
+  },
   "GBF.DE": {},
   "BA.L": {},
   "LLY": {},

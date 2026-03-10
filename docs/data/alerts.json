@@ -1,5 +1,11 @@
 [
   {
+    "ts": "2026-03-10 08:56 UTC",
+    "type": "intel_run",
+    "ticker": "",
+    "message": "Intel run complete: 19 holdings, 0 new rating change(s), 0 news article(s)"
+  },
+  {
     "ts": "2026-03-10 08:53 UTC",
     "type": "digest",
     "ticker": "",

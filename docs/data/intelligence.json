@@ -1,39 +1,15 @@
 {
-  "generated": "2026-03-09T23:01:49.257127",
+  "generated": "2026-03-10T08:56:45.778148",
   "holdings": [
     {
       "ticker": "MSFT",
-      "finnhub_symbol": "MSFT",
       "name": "Microsoft",
       "ratings": [],
       "new_ratings": [],
-      "news": [
-        {
-          "title": "Stock Market Today, March 9: Amazon Edges Higher on Zoox Robotaxi Expansion",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=d9351fdad7ba0f95e97c301a3a4e2822d53e9d02350ca5d888b9b3a568230e39",
-          "date": "2026-03-09",
-          "summary": "Zoox's robotaxi rollout and delivery network spotlight Amazon\u2019s evolving logistics and AI strategy, today, March 9, 2026."
-        },
-        {
-          "title": "The Agentic AI Market Could Grow 10X by 2030. This Stock Is Leading the Charge.",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=3a9361839251ab498128eca5fd6ab3b8375d186482f7796f8541d5a7edef8709",
-          "date": "2026-03-09",
-          "summary": "Microsoft's powerful artificial intelligence (AI) ecosystem can make it one of the biggest winners in the rapidly expanding agentic AI market."
-        },
-        {
-          "title": "'Make Tech Value Again': This is software's 'only hope'",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=ecdcbf82e0b551a53c6659f3ec03be322e66abaceabfcf3e5d731d12832b62be",
-          "date": "2026-03-09",
-          "summary": "Portfolio Wealth Advisors president and chief investment officer Lee Munson chats with Yahoo Finance Markets and Data Editor Jared Blikre on the New York Stock Exchange floor to discuss the market's ("
-        }
-      ]
+      "news": []
     },
     {
       "ticker": "ENR.DE",
-      "finnhub_symbol": "XETRA:ENR",
       "name": "Siemens Energy",
       "ratings": [],
       "new_ratings": [],
@@ -41,7 +17,6 @@
     },
     {
       "ticker": "VH2.DE",
-      "finnhub_symbol": "XETRA:VH2",
       "name": "Friedrich Vorwerk Group",
       "ratings": [],
       "new_ratings": [],
@@ -49,7 +24,6 @@
     },
     {
       "ticker": "MILDEF.ST",
-      "finnhub_symbol": "STO:MILDEF",
       "name": "MilDef Group",
       "ratings": [],
       "new_ratings": [],
@@ -57,37 +31,13 @@
     },
     {
       "ticker": "GOOG",
-      "finnhub_symbol": "GOOG",
       "name": "Alphabet (Google) Class C",
       "ratings": [],
       "new_ratings": [],
-      "news": [
-        {
-          "title": "Nvidia, Palantir And How To Invest In The Volatile Fog Of War",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=7b56c15d3c93dd781faf7a0e3892d90467bade213c5b4980bb9be8d160a24271",
-          "date": "2026-03-09",
-          "summary": "As the U.S.-Iran conflict continues, how to invest during market volatility comes into focus, with a look at historical precedent."
-        },
-        {
-          "title": "Oracle to report Q3 earnings as Wall Street questions AI spending",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=800ace391859bf23c83932ec120d087eafb462ed7a75567a2b8ee467c5deba8c",
-          "date": "2026-03-09",
-          "summary": "Oracle will report its Q3 earnings after the bell on Tuesday."
-        },
-        {
-          "title": "Hewlett Packard Enterprise projects revenue above estimates on AI boom",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=5b85f31a2e860b7f8b92d4b04f574413d7f383cb840bab22ed80d4cd182fe2a0",
-          "date": "2026-03-09",
-          "summary": "Hewlett Packard Enterprise forecast second-quarter revenue above Wall Street estimates on Monday, betting on growing demand for its artificial intelligence-powered \u200cservers. The company, which provide"
-        }
-      ]
+      "news": []
     },
     {
       "ticker": "AIR.PA",
-      "finnhub_symbol": "EPA:AIR",
       "name": "Airbus",
       "ratings": [],
       "new_ratings": [],
@@ -95,7 +45,6 @@
     },
     {
       "ticker": "HO.PA",
-      "finnhub_symbol": "EPA:HO",
       "name": "Thales",
       "ratings": [],
       "new_ratings": [],
@@ -103,97 +52,64 @@
     },
     {
       "ticker": "NVDA",
-      "finnhub_symbol": "NVDA",
       "name": "NVIDIA",
-      "ratings": [],
-      "new_ratings": [],
-      "news": [
+      "ratings": [
         {
-          "title": "Stock Market Today, March 9: Nvidia Rises Ahead of GTC as Investors Watch for AI Chip Announcements",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=6b618452b6de138b0319ad095169d6283cbfb83f292327c0bf07c0ca146634b7",
-          "date": "2026-03-09",
-          "summary": "Nvidia rose ahead of its GTC conference as investors anticipate new AI hardware and signals about the next wave of data-center demand."
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
         },
         {
-          "title": "Dow Jones Futures: Trump's Iran Comments Spark Stock Market Reversal As Oil Prices Tumble",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=3139fd87d6f515b32c025e53845810b8690265f6ab48e85402ce636e647c8b02",
-          "date": "2026-03-09",
-          "summary": "Dow Jones Futures: President Trump's comments on Iran sparked a stock market reversal Monday, as oil prices spiked lower."
-        },
-        {
-          "title": "Nvidia Partner, IBD Stock Of The Day, Surges To High On S&P 500 News, Trump's Iran War Hopes",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=89de1693cc04fe0bb26cc466e293d693ae3ab4749e8ab81281a23d2c738be324",
-          "date": "2026-03-09",
-          "summary": "Stock Of The Day: Nvidia partner Vertiv bolted out of a short consolidation on news that it'll join the S&P 500 and on Trump's Iran comments."
+          "date": "2026-03-03",
+          "firm": "Wedbush",
+          "from_grade": "Outperform",
+          "to_grade": "Outperform",
+          "action": "up"
         }
-      ]
+      ],
+      "new_ratings": [],
+      "news": []
     },
     {
       "ticker": "AMZN",
-      "finnhub_symbol": "AMZN",
       "name": "Amazon",
       "ratings": [],
       "new_ratings": [],
-      "news": [
-        {
-          "title": "3 Reasons Investors Love Synchrony Financial (SYF)",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=89c65127586240dc917b357cc5a969454f1696b8e28edee7579fec614b9b09a9",
-          "date": "2026-03-09",
-          "summary": "Over the past six months, Synchrony Financial\u2019s stock price fell to $66.59. Shareholders have lost 12.5% of their capital, which is disappointing considering the S&P 500 has climbed by 4.8%. This migh"
-        },
-        {
-          "title": "Stock Market Today, March 9: Amazon Edges Higher on Zoox Robotaxi Expansion",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=d9351fdad7ba0f95e97c301a3a4e2822d53e9d02350ca5d888b9b3a568230e39",
-          "date": "2026-03-09",
-          "summary": "Zoox's robotaxi rollout and delivery network spotlight Amazon\u2019s evolving logistics and AI strategy, today, March 9, 2026."
-        },
-        {
-          "title": "Oracle to report Q3 earnings as Wall Street questions AI spending",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=800ace391859bf23c83932ec120d087eafb462ed7a75567a2b8ee467c5deba8c",
-          "date": "2026-03-09",
-          "summary": "Oracle will report its Q3 earnings after the bell on Tuesday."
-        }
-      ]
+      "news": []
     },
     {
       "ticker": "AAPL",
-      "finnhub_symbol": "AAPL",
       "name": "Apple",
-      "ratings": [],
-      "new_ratings": [],
-      "news": [
+      "ratings": [
         {
-          "title": "Apple's Latest Move Is a Brilliant One, and It Could Be a Game Changer for the Stock",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=81b73b3945c245c0403ca632ce6d5afe6eec0ee7bdd4997b6e3fcb620b985475",
-          "date": "2026-03-09",
-          "summary": "Apple recently announced a new budget-friendly laptop, the MacBook Neo."
+          "date": "2026-03-05",
+          "firm": "Wedbush",
+          "from_grade": "Outperform",
+          "to_grade": "Outperform",
+          "action": "up"
         },
         {
-          "title": "Apple Postpones Smart Home Display Launch as It Waits for New AI and Siri",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=d1709a2005e1200deef15c695eb3ee619a91818a278e8df9d31c855a6ce064c9",
-          "date": "2026-03-09",
-          "summary": "The product, code-named J490, was first scheduled for spring 2025 but was postponed to let the company finish work on a new Siri digital assistant \u2014 an integral piece of the device\u2019s interface.  Apple"
+          "date": "2026-03-05",
+          "firm": "Rosenblatt",
+          "from_grade": "Neutral",
+          "to_grade": "Neutral",
+          "action": "reit"
         },
         {
-          "title": "2 Warren Buffett Stocks To Buy Hand Over Fist and 1 To Avoid",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=a68508ab5c2429f77874ff747002e8263e085f19e2dacf00d4c5264a605c6811",
-          "date": "2026-03-09",
-          "summary": "Apple and American Express are better long-term buys than Kraft Heinz."
+          "date": "2026-03-03",
+          "firm": "Barclays",
+          "from_grade": "Underweight",
+          "to_grade": "Underweight",
+          "action": "down"
         }
-      ]
+      ],
+      "new_ratings": [],
+      "news": []
     },
     {
       "ticker": "GBF.DE",
-      "finnhub_symbol": "XETRA:GBF",
       "name": "Bilfinger",
       "ratings": [],
       "new_ratings": [],
@@ -201,7 +117,6 @@
     },
     {
       "ticker": "BA.L",
-      "finnhub_symbol": "LON:BA",
       "name": "BAE Systems",
       "ratings": [],
       "new_ratings": [],
@@ -209,37 +124,13 @@
     },
     {
       "ticker": "LLY",
-      "finnhub_symbol": "LLY",
       "name": "Eli Lilly",
       "ratings": [],
       "new_ratings": [],
-      "news": [
-        {
-          "title": "Sector Update: Health Care Stocks Higher Late Afternoon",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=9ff388fd03e00971aac68ec0ea10cde9ce85580ed09fd8696aab96546c494631",
-          "date": "2026-03-09",
-          "summary": "Health care stocks were higher late Monday afternoon, with the NYSE Health Care Index up 0.7% and th"
-        },
-        {
-          "title": "Should You Buy Eli Lilly Stock Now or Wait for More of a Pullback?",
-          "source": "Yahoo",
-          "url": "https://finnhub.io/api/news?id=4005383ad9d04c4daed557f77309d4fe15e315e0b02eb29f2ccf6f51845a5424",
-          "date": "2026-03-09",
-          "summary": "Eli Lilly's stock is a bit expensive, even with a bit of a decline this year."
-        },
-        {
-          "title": "Hims & Hers: Not Selling Yet",
-          "source": "SeekingAlpha",
-          "url": "https://finnhub.io/api/news?id=22224df0eeca4cf7d0c6de4ff1756a1a09d1bf495a87005192241416625ebf6b",
-          "date": "2026-03-09",
-          "summary": "Hims & Hers surged 40% on a renewed Novo Nordisk GLP-1 deal. Read the latest analysis on the stock here."
-        }
-      ]
+      "news": []
     },
     {
       "ticker": "BESI.AS",
-      "finnhub_symbol": "AMS:BESI",
       "name": "BE Semiconductor (BESI)",
       "ratings": [],
       "new_ratings": [],
@@ -247,7 +138,6 @@
     },
     {
       "ticker": "ASM.AS",
-      "finnhub_symbol": "AMS:ASM",
       "name": "ASM International (ASMI)",
       "ratings": [],
       "new_ratings": [],
@@ -255,7 +145,6 @@
     },
     {
       "ticker": "SPYY.DE",
-      "finnhub_symbol": "XETRA:SPYY",
       "name": "SPDR MSCI ACWI UCITS ETF",
       "ratings": [],
       "new_ratings": [],
@@ -263,7 +152,6 @@
     },
     {
       "ticker": "EUNK.DE",
-      "finnhub_symbol": "XETRA:EUNK",
       "name": "iShares Core MSCI Europe UCITS ETF",
       "ratings": [],
       "new_ratings": [],
@@ -271,7 +159,6 @@
     },
     {
       "ticker": "QDVE.DE",
-      "finnhub_symbol": "XETRA:QDVE",
       "name": "iShares S&P 500 IT Sector UCITS ETF",
       "ratings": [],
       "new_ratings": [],
@@ -279,7 +166,6 @@
     },
     {
       "ticker": "IS3N.DE",
-      "finnhub_symbol": "XETRA:IS3N",
       "name": "iShares Core MSCI EM IMI UCITS ETF",
       "ratings": [],
       "new_ratings": [],
