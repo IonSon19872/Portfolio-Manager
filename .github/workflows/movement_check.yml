@@ -25,14 +25,13 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - run: pip install -r requirements.txt
+      - run: pip install requests yfinance
 
       - name: Run movement check
         env:
           EMAIL_FROM:      ${{ secrets.EMAIL_FROM }}
           EMAIL_PASSWORD:  ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_TO:        ${{ secrets.EMAIL_TO }}
-          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
           DIGEST_MODE:     "movement"  # alerts only, no full digest email
         run: python scripts/price_digest.py
 
