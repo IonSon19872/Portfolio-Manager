@@ -197,6 +197,11 @@ def get_stock_data(holding: dict, _ignored: str = "") -> dict:
             log.warning("  info fetch failed for " + ticker + ": " + str(e))
 
         out["timestamp"] = datetime.utcnow().isoformat()
+       # Attach Morningstar data if pre-fetched (passed in via holding dict)
+        if holding.get("star_rating"):
+            out["star_rating"]    = holding["star_rating"]
+        if holding.get("analyst_rating"):
+            out["analyst_rating"] = holding["analyst_rating"]
 
     except Exception as e:
         out["error"] = "yfinance error for " + ticker + ": " + str(e)
