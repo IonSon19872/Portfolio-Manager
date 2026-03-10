@@ -1,5 +1,11 @@
 [
   {
+    "ts": "2026-03-10 10:16 UTC",
+    "type": "digest",
+    "ticker": "",
+    "message": "Digest sent at 10:16 UTC"
+  },
+  {
     "ts": "2026-03-10 10:13 UTC",
     "type": "intel_run",
     "ticker": "",
