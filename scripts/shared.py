@@ -624,7 +624,7 @@ def _holding_row(s: dict) -> str:
         + "</span>" + closed_badge
     )
 
-  return (
+return (
         "<tr>"
         + _td(s.get("ticker", ""),        "color:#06402B;font-weight:700")
         + _td((s.get("name") or "")[:26], "color:#06402B;font-weight:600")
