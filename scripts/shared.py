@@ -206,6 +206,12 @@ def get_stock_data(holding: dict, _ignored: str = "") -> dict:
 
 # -- ANALYST UPGRADES ---------------------------------------------------------
 def get_analyst_upgrades(ticker: str, _ignored: str = "", days_back: int = 7) -> list:
+    is_european = any(ticker.endswith(x) for x in
+                      [".DE", ".PA", ".L", ".AS", ".ST", ".MI", ".BR",
+                       ".CO", ".HE", ".OL", ".VI", ".SW", ".MC"])
+    if is_european:
+        return []
+
     cutoff = (date.today() - timedelta(days=days_back)).isoformat()
     try:
         t  = yf.Ticker(ticker)
@@ -236,7 +242,83 @@ def get_analyst_upgrades(ticker: str, _ignored: str = "", days_back: int = 7) ->
         log.warning("  upgrades fetch failed for " + ticker + ": " + str(e))
         return []
 
+def get_morningstar_data(ticker: str, isin: str) -> dict:
+    """
+    Fetch Morningstar star rating and analyst rating via mstarpy.
+    Uses ISIN for reliable lookup across all exchanges.
+    Returns dict with star_rating (1-5) and analyst_rating (Gold/Silver/etc)
+    """
+    if not isin:
+        return {}
 
+    try:
+        import mstarpy
+
+        # Determine country code from ISIN prefix
+        isin_upper  = isin.upper()
+        country_map = {
+            "US": "us", "DE": "de", "FR": "fr", "GB": "gb",
+            "NL": "nl", "SE": "se", "IE": "ie", "CH": "ch",
+            "IT": "it", "ES": "es", "BE": "be", "DK": "dk",
+            "NO": "no", "FI": "fi", "AT": "at",
+        }
+        country_code = country_map.get(isin_upper[:2], "us")
+
+        # Try as Fund first (ETFs), then as Stock
+        ms_obj  = None
+        is_fund = any(ticker.endswith(x) for x in
+                      [".DE", ".PA", ".L", ".AS", ".ST", ".MI",
+                       ".CO", ".HE", ".OL", ".VI", ".SW", ".MC", ".BR"])
+
+        if is_fund:
+            try:
+                ms_obj = mstarpy.Funds(term=isin, country=country_code)
+            except Exception:
+                try:
+                    ms_obj = mstarpy.Stock(term=isin, exchange=country_code)
+                except Exception:
+                    pass
+        else:
+            try:
+                ms_obj = mstarpy.Stock(term=isin, exchange=country_code)
+            except Exception:
+                try:
+                    ms_obj = mstarpy.Funds(term=isin, country=country_code)
+                except Exception:
+                    pass
+
+        if ms_obj is None:
+            return {}
+
+        result = {}
+
+        try:
+            sr = ms_obj.starRating()
+            if sr:
+                result["star_rating"] = int(sr)
+        except Exception:
+            pass
+
+        try:
+            ar = ms_obj.analystRating()
+            if ar:
+                result["analyst_rating"] = str(ar)
+        except Exception:
+            pass
+
+        if result:
+            log.info("    Morningstar: stars=" + str(result.get("star_rating", "--")) +
+                     " rating=" + str(result.get("analyst_rating", "--")))
+
+        return result
+
+    except ImportError:
+        log.warning("  mstarpy not installed")
+        return {}
+    except Exception as e:
+        log.warning("  Morningstar fetch failed for " + ticker + ": " + str(e))
+        return {}
+        
 # -- COMPANY NEWS -------------------------------------------------------------
 def get_company_news(ticker: str, _ignored: str = "",
                      days_back: int = 1, max_articles: int = 3) -> list:
@@ -251,7 +333,6 @@ def get_company_news(ticker: str, _ignored: str = "",
             raw = resp.read()
 
         root  = ET.fromstring(raw)
-        ns    = {"dc": "http://purl.org/dc/elements/1.1/"}
         items = root.findall(".//item")
 
         results, seen = [], set()
@@ -263,8 +344,8 @@ def get_company_news(ticker: str, _ignored: str = "",
 
             pub = item.findtext("pubDate") or ""
             try:
-                dt  = datetime.strptime(pub[:16].strip(), "%a, %d %b %Y")
-                d   = dt.strftime("%Y-%m-%d")
+                dt = datetime.strptime(pub[:16].strip(), "%a, %d %b %Y")
+                d  = dt.strftime("%Y-%m-%d")
             except Exception:
                 d = ""
 
@@ -426,8 +507,32 @@ def _holding_row(s: dict) -> str:
     color = "#7d8fa8" if market_closed else ("#52d68a" if chg >= 0 else "#f56565")
     arrow = "+" if chg >= 0 else "-"
 
-    rec = (s.get("recommendation") or "").replace("_", " ")
-    rc  = "#52d68a" if "buy" in rec else "#f56565" if "sell" in rec else "#f6ad55"
+    # Analyst cell — broker rec OR Morningstar rating
+    rec      = (s.get("recommendation") or "").replace("_", " ")
+    ms_stars = s.get("star_rating")
+    ms_ar    = s.get("analyst_rating") or ""
+    ar_color = (
+        "#ffd700" if ms_ar == "Gold"
+        else "#c0c0c0" if ms_ar == "Silver"
+        else "#cd7f32" if ms_ar == "Bronze"
+        else "#f56565" if ms_ar == "Negative"
+        else "#7d8fa8"
+    )
+
+    if ms_stars:
+        stars_str = ("★" * ms_stars) + ("☆" * (5 - ms_stars))
+        if ms_ar:
+            analyst_html = (
+                "<span style='color:#fbbf24'>" + stars_str + "</span>"
+                " <span style='color:" + ar_color + ";font-size:10px'>" + ms_ar + "</span>"
+            )
+        else:
+            analyst_html = "<span style='color:#fbbf24'>" + stars_str + "</span>"
+    elif rec:
+        rc           = "#52d68a" if "buy" in rec else "#f56565" if "sell" in rec else "#f6ad55"
+        analyst_html = "<span style='color:" + rc + ";font-size:10px;text-transform:uppercase'>" + rec + "</span>"
+    else:
+        analyst_html = "<span style='color:#4a5568'>--</span>"
 
     p_raw  = s.get("price_eur")
     v_raw  = s.get("value_eur")
@@ -446,10 +551,6 @@ def _holding_row(s: dict) -> str:
         + arrow + " " + "{:.2f}".format(abs(chg)) + "%"
         + "</span>" + closed_badge
     )
-    rec_cell = (
-        "<span style='color:" + rc + ";font-size:10px;text-transform:uppercase'>"
-        + (rec or "--") + "</span>"
-    )
 
     return (
         "<tr>"
@@ -459,10 +560,9 @@ def _holding_row(s: dict) -> str:
         + _td(chg_cell)
         + _td(str(shares) if shares else "--")
         + _td(("EUR " + v_str) if v_str != "--" else "--", "font-weight:600")
-        + _td(rec_cell)
+        + _td(analyst_html)
         + "</tr>"
     )
-
 
 def _table(rows: str) -> str:
     heads = "".join(_TH(h) for h in
