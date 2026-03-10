@@ -2,19 +2,12 @@
 """
 price_digest.py - Two modes, controlled by DIGEST_MODE env var
 
-  DIGEST_MODE=full      (07:45 CET via price_digest.yml)
-    Fetch all holdings, send full portfolio digest email, check movements.
-
-  DIGEST_MODE=movement  (08:30 / 12:00 / 15:15 / 17:00 CET via movement_check.yml)
-    Fetch all holdings, check movements only - NO digest email.
-    Movement alert emails are still sent per-stock when threshold breached.
-
-Finnhub calls per run: 5 calls x 20 holdings = 100 calls (~100 s at 1 s/call).
+  DIGEST_MODE=full      - fetch all holdings, send digest email, check movements
+  DIGEST_MODE=movement  - fetch all holdings, check movements only, no digest email
 """
 
 import os
 import sys
-import logging
 from pathlib import Path
 from datetime import datetime
 
@@ -31,7 +24,6 @@ WEEK_OPEN_F = DATA_DIR / "week_open.json"
 
 
 def build_snapshot(cfg: dict) -> dict:
-    api_key  = cfg["finnhub"]["api_key"]
     snapshot = {
         "stocks":    [],
         "etfs":      [],
@@ -43,15 +35,15 @@ def build_snapshot(cfg: dict) -> dict:
     for holding in cfg["portfolio"]["stocks"]:
         if not holding.get("ticker"):
             continue
-        data = get_stock_data(holding, api_key)
+        data = get_stock_data(holding)
         data["shares"]    = holding.get("shares", 0)
         data["value_eur"] = round((data.get("price_eur") or 0) * data["shares"], 2)
         snapshot["stocks"].append(data)
         if "error" not in data:
             snapshot["total_eur"] += data["value_eur"]
             log.info("    OK  EUR " + str(data["price_eur"]) +
-                     "  (" + "{:+.2f}".format(data["change_pct"]) + "%)  " +
-                     "value EUR " + str(data["value_eur"]))
+                     "  (" + "{:+.2f}".format(data["change_pct"]) + "%)" +
+                     "  value EUR " + str(data["value_eur"]))
         else:
             log.warning("    FAIL " + data["error"])
 
@@ -59,15 +51,15 @@ def build_snapshot(cfg: dict) -> dict:
     for holding in cfg["portfolio"]["etfs"]:
         if not holding.get("ticker"):
             continue
-        data = get_stock_data(holding, api_key)
+        data = get_stock_data(holding)
         data["shares"]    = holding.get("shares", 0)
         data["value_eur"] = round((data.get("price_eur") or 0) * data["shares"], 2)
         snapshot["etfs"].append(data)
         if "error" not in data:
             snapshot["total_eur"] += data["value_eur"]
             log.info("    OK  EUR " + str(data["price_eur"]) +
-                     "  (" + "{:+.2f}".format(data["change_pct"]) + "%)  " +
-                     "value EUR " + str(data["value_eur"]))
+                     "  (" + "{:+.2f}".format(data["change_pct"]) + "%)" +
+                     "  value EUR " + str(data["value_eur"]))
         else:
             log.warning("    FAIL " + data["error"])
 
@@ -76,8 +68,6 @@ def build_snapshot(cfg: dict) -> dict:
 
 
 def check_movements(snapshot: dict, cfg: dict) -> int:
-    """Compare current prices against last known prices.
-    Send an alert email for any holding that moved > threshold %."""
     threshold   = cfg["alerts"].get("movement_threshold_pct", 3.0)
     last_prices = cfg.get("last_prices", {})
     alerts_sent = 0
@@ -96,8 +86,8 @@ def check_movements(snapshot: dict, cfg: dict) -> int:
                 msg = (
                     ticker + " moved " + direction + " " +
                     "{:.1f}".format(abs(move)) + "% " +
-                    "(EUR " + "{:.2f}".format(prev) + " -> EUR " +
-                    "{:.2f}".format(price_now) + ")"
+                    "(EUR " + "{:.2f}".format(prev) +
+                    " -> EUR " + "{:.2f}".format(price_now) + ")"
                 )
                 log.info("  ALERT: " + msg)
                 append_alert("movement", ticker, msg)
@@ -120,9 +110,6 @@ def main():
     log.info("=== Price Digest  mode=" + mode + " ===")
 
     cfg = load_config()
-    if not cfg["finnhub"]["api_key"]:
-        log.error("FINNHUB_API_KEY not set. Add it as a GitHub Secret.")
-        sys.exit(1)
 
     log.info(
         "Portfolio: " + str(len(cfg["portfolio"]["stocks"])) + " stocks, " +
@@ -135,9 +122,8 @@ def main():
     save_json(SNAPSHOT_F, snapshot)
     log.info("Snapshot saved -> " + str(SNAPSHOT_F))
 
-    # Save Monday opening snapshot for Saturday week-over-week comparison
     if datetime.utcnow().weekday() == 0:
-        existing = load_json(WEEK_OPEN_F, {})
+        existing  = load_json(WEEK_OPEN_F, {})
         today_str = datetime.utcnow().strftime("%Y-%m-%d")
         if existing.get("timestamp", "")[:10] != today_str:
             save_json(WEEK_OPEN_F, snapshot)
@@ -153,7 +139,7 @@ def main():
         append_alert("digest", "", "Digest sent at " + label)
         send_email(
             "Portfolio Digest - " + label,
-            digest_html(snapshot, "Digest - " + label),
+            digest_html(snapshot, label),
             cfg
         )
         log.info("  Digest email sent")
