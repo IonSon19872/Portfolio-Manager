@@ -624,10 +624,10 @@ def _holding_row(s: dict) -> str:
         + "</span>" + closed_badge
     )
 
-    return (
+  return (
         "<tr>"
-        + _td(s.get("ticker", ""),        "color:#FFBF00;font-weight:700")
-        + _td((s.get("name") or "")[:26], "color:#FFBF00;font-weight:600")
+        + _td(s.get("ticker", ""),        "color:#06402B;font-weight:700")
+        + _td((s.get("name") or "")[:26], "color:#06402B;font-weight:600")
         + _td(("EUR " + p_str) if p_str != "--" else "--", "color:#0a0a0a")
         + _td(chg_cell)
         + _td(str(shares) if shares else "--", "color:#0a0a0a")
