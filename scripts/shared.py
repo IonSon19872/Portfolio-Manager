@@ -189,15 +189,19 @@ def get_stock_data(holding: dict, api_key: str) -> dict:
 
     # Call 1: Quote
     q = _get("quote", {"symbol": finnhub_sym}, api_key)
-    if not q or not q.get("c"):
+    # q["c"] is 0 when market is closed (common for European stocks on free tier)
+    # Fall back to previous close so we still show the stock rather than hiding it
+    raw_c  = q.get("c")  if q else None
+    raw_pc = q.get("pc") if q else None
+    price  = float(raw_c  or raw_pc or 0)
+    prev   = float(raw_pc or raw_c  or 0)
+    if not q or price == 0:
         out["error"] = (
-            f"No price data from Finnhub (symbol tried: {finnhub_sym}). "
-            f"Add 'finnhub_symbol' override in portfolio_config.json if needed."
+            "No price data from Finnhub (symbol tried: " + finnhub_sym + "). "
+            "Add 'finnhub_symbol' override in portfolio_config.json if needed."
         )
         return out
 
-    price   = float(q["c"])
-    prev    = float(q.get("pc", 0))
     chg_pct = float(q.get("dp", 0))
 
     out.update({
@@ -250,15 +254,15 @@ def get_stock_data(holding: dict, api_key: str) -> dict:
     # Call 4: Analyst recommendation
     rec = _get("stock/recommendation", {"symbol": finnhub_sym}, api_key)
     if rec and isinstance(rec, list) and rec:
-        latest    = rec[0]
-        sb        = latest.get("strongBuy",  0)
-        b         = latest.get("buy",        0)
-        h         = latest.get("hold",       0)
-        s         = latest.get("sell",       0)
-        ss        = latest.get("strongSell", 0)
-        tot       = sb + b + h + s + ss
+        latest     = rec[0]
+        sb         = latest.get("strongBuy",  0)
+        b          = latest.get("buy",        0)
+        h          = latest.get("hold",       0)
+        s          = latest.get("sell",       0)
+        ss         = latest.get("strongSell", 0)
+        tot        = sb + b + h + s + ss
         bull_ratio = (sb + b) / tot if tot else 0
-        label     = "buy" if bull_ratio >= 0.6 else "sell" if bull_ratio <= 0.3 else "hold"
+        label      = "buy" if bull_ratio >= 0.6 else "sell" if bull_ratio <= 0.3 else "hold"
         out.update({
             "recommendation": label,
             "analyst_buy":    sb + b,
@@ -385,30 +389,55 @@ def _td(v, x=""):
 
 
 def _holding_row(s: dict) -> str:
-    chg    = s.get("change_pct", 0) or 0
-    color  = "#52d68a" if chg >= 0 else "#f56565"
-    arrow  = "^" if chg >= 0 else "v"
+    chg = s.get("change_pct") or 0
+
+    # Detect market-closed state: price returned is prev close, change is 0
+    price_native  = s.get("price_native") or 0
+    prev_close    = s.get("prev_close")   or 0
+    market_closed = (chg == 0 and price_native > 0 and abs(price_native - prev_close) < 0.001)
+    color = "#7d8fa8" if market_closed else ("#52d68a" if chg >= 0 else "#f56565")
+    arrow = "+" if chg >= 0 else "-"
+
     rec    = (s.get("recommendation") or "").replace("_", " ")
     rc     = "#52d68a" if "buy" in rec else "#f56565" if "sell" in rec else "#f6ad55"
     counts = ""
     if s.get("analyst_total"):
-        b  = s.get("analyst_buy",  0)
-        h  = s.get("analyst_hold", 0)
-        sl = s.get("analyst_sell", 0)
-        counts = "B:" + str(b) + " H:" + str(h) + " S:" + str(sl)
-    p_eur  = s.get("price_eur", "--")
-    v_eur  = s.get("value_eur", "--")
-    label  = rec or counts or "--"
-    chg_cell  = "<span style='color:" + color + "'>" + arrow + " " + str(round(abs(chg), 2)) + "%</span>"
-    rec_cell  = "<span style='color:" + rc + ";font-size:10px;text-transform:uppercase'>" + label + "</span>"
+        counts = (
+            "B:" + str(s.get("analyst_buy",  0)) +
+            " H:" + str(s.get("analyst_hold", 0)) +
+            " S:" + str(s.get("analyst_sell", 0))
+        )
+
+    # Safely format price and value
+    p_raw  = s.get("price_eur")
+    v_raw  = s.get("value_eur")
+    shares = s.get("shares") or 0
+    p_str  = "{:.2f}".format(float(p_raw)) if p_raw not in (None, "", "--") else "--"
+    v_str  = "{:.2f}".format(float(v_raw)) if v_raw not in (None, "", "--") else "--"
+    # Recompute value if missing (backward compat with old snapshots)
+    if v_str == "--" and p_str != "--" and shares:
+        v_str = "{:.2f}".format(float(p_str) * float(shares))
+
+    label        = rec or counts or "--"
+    closed_badge = "<span style='color:#4a5568;font-size:9px'> mkt closed</span>" if market_closed else ""
+    chg_cell     = (
+        "<span style='color:" + color + "'>"
+        + arrow + " " + "{:.2f}".format(abs(chg)) + "%"
+        + "</span>" + closed_badge
+    )
+    rec_cell = (
+        "<span style='color:" + rc + ";font-size:10px;text-transform:uppercase'>"
+        + label + "</span>"
+    )
+
     return (
         "<tr>"
-        + _td(s["ticker"],                   "color:#4f9ef8;font-weight:600")
-        + _td((s.get("name") or "")[:26],    "color:#7d8fa8")
-        + _td("EUR " + str(p_eur))
+        + _td(s.get("ticker", ""),         "color:#4f9ef8;font-weight:600")
+        + _td((s.get("name") or "")[:26],  "color:#7d8fa8")
+        + _td(("EUR " + p_str) if p_str != "--" else "--")
         + _td(chg_cell)
-        + _td(s.get("shares", ""))
-        + _td("EUR " + str(v_eur),           "font-weight:600")
+        + _td(str(shares) if shares else "--")
+        + _td(("EUR " + v_str) if v_str != "--" else "--", "font-weight:600")
         + _td(rec_cell)
         + "</tr>"
     )
@@ -476,7 +505,7 @@ def rating_change_html(ticker: str, name: str, changes: list) -> str:
             else "#f56565" if any(w in tl for w in ["sell", "underperform", "underweight", "negative"])
             else "#f6ad55"
         )
-        action = c.get("action", "").lower()
+        action    = c.get("action", "").lower()
         badge_map = {
             "up":   "<span style='color:#52d68a;font-size:10px'>UPGRADE</span>",
             "down": "<span style='color:#f56565;font-size:10px'>DOWNGRADE</span>",
@@ -526,8 +555,8 @@ def news_digest_html(holdings_with_news: list, run_label: str) -> str:
             summ     = (a.get("summary") or "")[:160]
             if summ and not summ.endswith((".", "...")):
                 summ += "..."
-            url   = a.get("url", "#")
-            title = a.get("title", "")
+            url       = a.get("url", "#")
+            title     = a.get("title", "")
             date_part = (" * " + date_str) if date_str else ""
             summ_part = (
                 "<div style='color:#7d8fa8;font-size:11px;line-height:1.6'>" + summ + "</div>"
@@ -581,9 +610,8 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
     week_start = snapshot.get("week_start_eur")
     week_chg   = ((total_eur - week_start) / week_start * 100) if week_start else None
     chg_color  = "#52d68a" if (week_chg or 0) >= 0 else "#f56565"
-    chg_arrow  = "^" if (week_chg or 0) >= 0 else "v"
+    chg_arrow  = "+" if (week_chg or 0) >= 0 else "-"
 
-    # Week-over-week block
     if week_chg is not None:
         week_chg_html = (
             "<div>"
@@ -609,7 +637,6 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
         "</div>"
     )
 
-    # Top movers
     movers_block = ""
     if week_movements:
         top  = sorted(week_movements, key=lambda x: abs(x.get("move_pct", 0)), reverse=True)[:8]
@@ -617,7 +644,7 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
         for m in top:
             mp    = m.get("move_pct", 0)
             col   = "#52d68a" if mp >= 0 else "#f56565"
-            arrow = "^" if mp >= 0 else "v"
+            arrow = "+" if mp >= 0 else "-"
             rows += (
                 "<tr>"
                 "<td style='padding:9px 14px;border-bottom:1px solid #21293a;"
@@ -644,7 +671,6 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
             "<thead><tr>" + heads + "</tr></thead><tbody>" + rows + "</tbody></table>"
         )
 
-    # Rating changes
     ratings_block = ""
     cutoff        = (datetime.utcnow() - timedelta(days=6)).strftime("%Y-%m-%d")
     all_changes   = []
@@ -693,7 +719,6 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
             "<tbody>" + "".join(_rc_row(c) for c in all_changes) + "</tbody></table>"
         )
 
-    # News this week
     news_sections = ""
     for h in (intel_data.get("holdings") or []):
         articles = [a for a in (h.get("news") or []) if a.get("date", "") >= cutoff]
@@ -701,11 +726,11 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
             continue
         rows = ""
         for a in articles[:4]:
-            src   = a.get("source", "")
-            dt    = a.get("date", "")
-            title = a.get("title", "")
-            url   = a.get("url", "#")
-            summ  = (a.get("summary") or "")[:140]
+            src       = a.get("source", "")
+            dt        = a.get("date", "")
+            title     = a.get("title", "")
+            url       = a.get("url", "#")
+            summ      = (a.get("summary") or "")[:140]
             dt_part   = (" * " + dt) if dt else ""
             summ_part = (
                 "<div style='color:#7d8fa8;font-size:11px;margin-top:3px'>" + summ + "...</div>"
@@ -833,7 +858,6 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
     def _td2(v, x=""):
         return "<td style='padding:9px 12px;" + BD + ";" + x + "'>" + str(v) + "</td>"
 
-    # Earnings
     earnings_block = ""
     earnings = calendar.get("earnings", [])
     if earnings:
@@ -846,13 +870,13 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
             qtr = ("Q" + str(e.get("quarter")) + " " + str(e.get("year", ""))) if e.get("quarter") else "--"
             rows += (
                 "<tr>"
-                + _td2(e.get("date", ""),       "color:#7d8fa8")
-                + _td2(e.get("ticker", ""),      "color:#4f9ef8;font-weight:600")
-                + _td2(e.get("name", "")[:22],   "color:#7d8fa8")
+                + _td2(e.get("date", ""),      "color:#7d8fa8")
+                + _td2(e.get("ticker", ""),     "color:#4f9ef8;font-weight:600")
+                + _td2(e.get("name", "")[:22],  "color:#7d8fa8")
                 + _td2(qtr)
-                + _td2(hl,                        "color:#7d8fa8;font-size:11px")
-                + _td2(eps,                       "color:#f6ad55")
-                + _td2(rev,                       "color:#7d8fa8")
+                + _td2(hl,                       "color:#7d8fa8;font-size:11px")
+                + _td2(eps,                      "color:#f6ad55")
+                + _td2(rev,                      "color:#7d8fa8")
                 + "</tr>"
             )
         earnings_block = _section(
@@ -860,7 +884,6 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
             ["Date", "Ticker", "Company", "Quarter", "Time", "EPS Est.", "Rev Est."]
         )
 
-    # Dividends
     dividends_block = ""
     dividends = calendar.get("dividends", [])
     if dividends:
@@ -869,10 +892,10 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
             amt = ((d.get("currency", "") + " " + "{:.4f}".format(d["amount"])) if d.get("amount") is not None else "--")
             rows += (
                 "<tr>"
-                + _td2(d.get("ex_date", ""),  "color:#7d8fa8")
-                + _td2(d.get("ticker", ""),   "color:#4f9ef8;font-weight:600")
-                + _td2(d.get("name", "")[:22],"color:#7d8fa8")
-                + _td2(amt,                    "color:#52d68a")
+                + _td2(d.get("ex_date", ""),   "color:#7d8fa8")
+                + _td2(d.get("ticker", ""),    "color:#4f9ef8;font-weight:600")
+                + _td2(d.get("name", "")[:22], "color:#7d8fa8")
+                + _td2(amt,                     "color:#52d68a")
                 + _td2(d.get("pay_date", "") or "--", "color:#7d8fa8")
                 + _td2((d.get("freq") or "--").title(), "color:#7d8fa8;font-size:11px")
                 + "</tr>"
@@ -882,7 +905,6 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
             ["Ex-Date", "Ticker", "Company", "Amount", "Pay Date", "Frequency"]
         )
 
-    # Splits
     splits_block = ""
     splits = calendar.get("splits", [])
     if splits:
@@ -890,10 +912,10 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
         for s in splits:
             rows += (
                 "<tr>"
-                + _td2(s.get("date", ""),     "color:#7d8fa8")
-                + _td2(s.get("ticker", ""),   "color:#4f9ef8;font-weight:600")
-                + _td2(s.get("name", "")[:22],"color:#7d8fa8")
-                + _td2(s.get("ratio", "--"),   "color:#b794f4;font-weight:600")
+                + _td2(s.get("date", ""),      "color:#7d8fa8")
+                + _td2(s.get("ticker", ""),    "color:#4f9ef8;font-weight:600")
+                + _td2(s.get("name", "")[:22], "color:#7d8fa8")
+                + _td2(s.get("ratio", "--"),    "color:#b794f4;font-weight:600")
                 + "</tr>"
             )
         splits_block = _section(
