@@ -974,14 +974,15 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
 def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str:
     def _TH2(s):
         return (
-            "<th style='padding:8px 12px;text-align:left;background:#1c2330;"
-            "color:#7d8fa8;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+            "<th style='padding:8px 12px;text-align:left;background:#87CEFB;"
+            "color:#0a0a0a;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
             + s + "</th>"
         )
 
     def _td2(v, x=""):
         return (
-            "<td style='padding:9px 12px;border-bottom:1px solid #21293a;" + x + "'>"
+            "<td style='padding:9px 12px;border-bottom:1px solid #21293a;"
+            "background:#87CEFB;color:#0a0a0a;" + x + "'>"
             + str(v) + "</td>"
         )
 
