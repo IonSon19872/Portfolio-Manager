@@ -278,6 +278,8 @@ def main():
                 "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
             )
         send_email("Portfolio Digest - " + label, html, cfg)
+      # Update last_prices silently so intraday checks have fresh baseline
+        check_movements_and_ratings(snapshot, cfg)
         append_alert("digest", "", "Morning digest sent at " + label)
 
     elif mode == "movement":
