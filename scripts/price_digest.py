@@ -129,22 +129,38 @@ def main():
             save_json(WEEK_OPEN_F, snapshot)
             log.info("Monday open snapshot saved -> " + str(WEEK_OPEN_F))
 
-    log.info("--- Movement check ---")
-    alerts = check_movements(snapshot, cfg)
-    log.info(str(alerts) + " movement alert(s) sent")
-
     if mode == "full":
-        log.info("--- Sending full digest email ---")
-        label = datetime.utcnow().strftime("%H:%M UTC")
-        append_alert("digest", "", "Digest sent at " + label)
-        send_email(
-            "Portfolio Digest - " + label,
-            digest_html(snapshot, label),
-            cfg
-        )
-        log.info("  Digest email sent")
-    else:
-        log.info("--- Movement-only mode - no digest email ---")
+        log.info("--- Fetching news for morning digest ---")
+        news_days_back = cfg.get("finnhub", {}).get("news_days_back", 1)
+        max_news       = cfg.get("finnhub", {}).get("max_news_per_stock", 3)
+        all_holdings   = cfg["portfolio"]["stocks"] + cfg["portfolio"]["etfs"]
+        holdings_with_news = []
+        for h in all_holdings:
+            ticker = (h.get("ticker") or "").strip()
+            name   = h.get("name", ticker)
+            if not ticker:
+                continue
+            news = get_company_news(ticker, days_back=news_days_back, max_articles=max_news)
+            if news:
+                holdings_with_news.append({"ticker": ticker, "name": name, "news": news})
+                log.info("  " + ticker + ": " + str(len(news)) + " article(s)")
+
+        log.info("--- Sending full morning digest ---")
+        label    = datetime.utcnow().strftime("%H:%M UTC")
+        html     = digest_html(snapshot, label)
+        if holdings_with_news:
+            html = html.replace(
+                "<p style='color:#4a5568;font-size:10px;margin-top:24px'>",
+                news_digest_html(holdings_with_news, label) +
+                "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
+            )
+        send_email("Portfolio Digest - " + label, html, cfg)
+        append_alert("digest", "", "Morning digest sent at " + label)
+
+    elif mode == "movement":
+        log.info("--- Movement + analyst check ---")
+        alerts_triggered = check_movements_and_ratings(snapshot, cfg)
+        log.info(str(alerts_triggered) + " alert(s) sent")
 
     log.info("=== Done ===")
 
