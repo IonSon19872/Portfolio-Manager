@@ -328,50 +328,113 @@ def get_morningstar_data(ticker: str, isin: str) -> dict:
 def get_company_news(ticker: str, _ignored: str = "",
                      days_back: int = 1, max_articles: int = 3) -> list:
     cutoff = (date.today() - timedelta(days=days_back)).isoformat()
-    try:
-        import urllib.request
-        import xml.etree.ElementTree as ET
 
-        url = "https://feeds.finance.yahoo.com/rss/2.0/headline?s=" + ticker + "&region=US&lang=en-US"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            raw = resp.read()
+    import urllib.request
+    import xml.etree.ElementTree as ET
 
-        root  = ET.fromstring(raw)
-        items = root.findall(".//item")
-
-        results, seen = [], set()
+    def _parse_rss(raw: bytes, default_source: str) -> list:
+        try:
+            root  = ET.fromstring(raw)
+            items = root.findall(".//item")
+        except Exception:
+            return []
+        results = []
+        seen    = set()
         for item in items:
             title = (item.findtext("title") or "").strip()
             if not title or title in seen:
                 continue
             seen.add(title)
-
             pub = item.findtext("pubDate") or ""
             try:
                 dt = datetime.strptime(pub[:16].strip(), "%a, %d %b %Y")
                 d  = dt.strftime("%Y-%m-%d")
             except Exception:
                 d = ""
-
             if d and d < cutoff:
                 continue
-
             results.append({
                 "title":   title,
-                "source":  item.findtext("source") or "Yahoo Finance",
+                "source":  item.findtext("source") or default_source,
                 "url":     item.findtext("link") or "",
                 "date":    d,
                 "summary": "",
             })
-            if len(results) >= max_articles:
-                break
-
         return results
 
-    except Exception as e:
-        log.warning("  news fetch failed for " + ticker + ": " + str(e))
-        return []
+    def _fetch(url: str, default_source: str) -> list:
+        try:
+            req = urllib.request.Request(
+                url, headers={"User-Agent": "Mozilla/5.0"}
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                raw = resp.read()
+            return _parse_rss(raw, default_source)
+        except Exception as e:
+            log.warning("  " + default_source + " failed for " + ticker + ": " + str(e))
+            return []
+
+    # Fetch from BOTH sources always, in parallel via threads
+    import threading
+
+    yahoo_results  = []
+    google_results = []
+
+    def _fetch_yahoo():
+        url = (
+            "https://feeds.finance.yahoo.com/rss/2.0/headline?s="
+            + ticker + "&region=US&lang=en-US"
+        )
+        yahoo_results.extend(_fetch(url, "Yahoo Finance"))
+
+    def _fetch_google():
+        # Use company base name for better Google News results
+        # e.g. "ENR.DE" -> "ENR", "AIR.PA" -> "AIR"
+        base  = ticker.split(".")[0]
+        query = urllib.request.quote(base + " stock")
+        url   = (
+            "https://news.google.com/rss/search?q="
+            + query + "&hl=en-US&gl=US&ceid=US:en"
+        )
+        google_results.extend(_fetch(url, "Google News"))
+
+    t1 = threading.Thread(target=_fetch_yahoo)
+    t2 = threading.Thread(target=_fetch_google)
+    t1.start()
+    t2.start()
+    t1.join(timeout=12)
+    t2.join(timeout=12)
+
+    # Merge both — deduplicate by title, interleave so both sources represented
+    seen    = set()
+    merged  = []
+
+    # Interleave: take 1 from yahoo, 1 from google, 1 from yahoo etc
+    # so final result always has mix of both sources when both return results
+    yi = 0
+    gi = 0
+    while len(merged) < max_articles * 2:
+        added = False
+        if yi < len(yahoo_results):
+            r = yahoo_results[yi]
+            yi += 1
+            if r["title"] not in seen:
+                seen.add(r["title"])
+                merged.append(r)
+                added = True
+        if gi < len(google_results):
+            r = google_results[gi]
+            gi += 1
+            if r["title"] not in seen:
+                seen.add(r["title"])
+                merged.append(r)
+                added = True
+        if not added:
+            break
+
+    # Sort by date descending, cap at max_articles
+    merged.sort(key=lambda x: x.get("date", ""), reverse=True)
+    return merged[:max_articles]
 
 
 # -- CALENDAR -----------------------------------------------------------------
