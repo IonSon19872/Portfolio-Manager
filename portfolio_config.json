@@ -49,20 +49,29 @@
         "finnhub_symbol": "EPA:HO"
       },
       {
-        "ticker": "NVDA",
-        "name": "NVIDIA",
-        "shares": 0
-      },
-      {
-        "ticker": "AMZN",
-        "name": "Amazon",
-        "shares": 0
-      },
-      {
-        "ticker": "AAPL",
-        "name": "Apple",
-        "shares": 0
-      },
+  "ticker": "NVDA",
+  "name": "NVIDIA",
+  "shares": 0,
+  "isin": "US67066G1040"
+},
+{
+  "ticker": "AMZN",
+  "name": "Amazon",
+  "shares": 0,
+  "isin": "US0231351067"
+},
+{
+  "ticker": "AAPL",
+  "name": "Apple",
+  "shares": 0,
+  "isin": "US0378331005"
+},
+{
+  "ticker": "LLY",
+  "name": "Eli Lilly",
+  "shares": 0,
+  "isin": "US5324571083"
+},
       {
         "ticker": "GBF.DE",
         "name": "Bilfinger",
@@ -75,12 +84,7 @@
         "shares": 0,
         "finnhub_symbol": "LON:BA"
       },
-      {
-        "ticker": "LLY",
-        "name": "Eli Lilly",
-        "shares": 0
-      },
-      {
+     {
         "ticker": "BESI.AS",
         "name": "BE Semiconductor (BESI)",
         "shares": 0,
