@@ -31,64 +31,6 @@
       "morningstar": {}
     },
     {
-      "ticker": "ADBE",
-      "name": "Adobe Inc",
-      "ratings": [
-        {
-          "date": "2026-03-10",
-          "firm": "TD Cowen",
-          "from_grade": "Hold",
-          "to_grade": "Hold",
-          "action": "reit"
-        },
-        {
-          "date": "2026-03-09",
-          "firm": "Wells Fargo",
-          "from_grade": "Overweight",
-          "to_grade": "Overweight",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-09",
-          "firm": "RBC Capital",
-          "from_grade": "Outperform",
-          "to_grade": "Outperform",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-06",
-          "firm": "Citigroup",
-          "from_grade": "Neutral",
-          "to_grade": "Neutral",
-          "action": "reit"
-        },
-        {
-          "date": "2026-03-04",
-          "firm": "Barclays",
-          "from_grade": "Overweight",
-          "to_grade": "Overweight",
-          "action": "up"
-        }
-      ],
-      "news": [],
-      "new_ratings": [
-        {
-          "date": "2026-03-10",
-          "firm": "TD Cowen",
-          "from_grade": "Hold",
-          "to_grade": "Hold",
-          "action": "reit"
-        }
-      ]
-    },
-    {
-      "ticker": "ITX.MC",
-      "name": "Inditex",
-      "ratings": [],
-      "news": [],
-      "new_ratings": []
-    },
-    {
       "ticker": "ENR.DE",
       "name": "Siemens Energy",
       "ratings": [],
@@ -255,6 +197,20 @@
           "from_grade": "Outperform",
           "to_grade": "Outperform",
           "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-03",
+          "firm": "Wedbush",
+          "from_grade": "Outperform",
+          "to_grade": "Outperform",
+          "action": "up"
         }
       ],
       "new_ratings": [],
@@ -317,6 +273,27 @@
       "ticker": "AAPL",
       "name": "Apple",
       "ratings": [
+        {
+          "date": "2026-03-05",
+          "firm": "Wedbush",
+          "from_grade": "Outperform",
+          "to_grade": "Outperform",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Rosenblatt",
+          "from_grade": "Neutral",
+          "to_grade": "Neutral",
+          "action": "reit"
+        },
+        {
+          "date": "2026-03-03",
+          "firm": "Barclays",
+          "from_grade": "Underweight",
+          "to_grade": "Underweight",
+          "action": "down"
+        },
         {
           "date": "2026-03-05",
           "firm": "Wedbush",
