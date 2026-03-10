@@ -113,6 +113,7 @@ def main():
 
     for h in all_holdings:
         ticker = (h.get("ticker") or "").strip()
+        isin   = (h.get("isin")   or "").strip()
         name   = h.get("name", ticker)
         if not ticker:
             continue
@@ -124,10 +125,19 @@ def main():
             "name":        name,
             "ratings":     [],
             "new_ratings": [],
-            "news":        []
+            "news":        [],
+            "morningstar": {}
         }
 
-        # Analyst ratings
+        # Morningstar data (star rating + analyst rating)
+        if isin:
+            log.info("    Morningstar...")
+            ms = get_morningstar_data(ticker, isin)
+            entry["morningstar"] = ms
+        else:
+            log.info("    Morningstar skipped (no ISIN)")
+
+        # Broker analyst ratings (US stocks only)
         log.info("    Ratings...")
         all_ratings          = check_ratings(ticker, name, seen, cfg)
         entry["ratings"]     = all_ratings[:10]
@@ -138,7 +148,7 @@ def main():
         ]
         total_new_ratings += len(entry["new_ratings"])
 
-        # News
+        # News via RSS
         log.info("    News...")
         news          = get_company_news(ticker, days_back=news_days_back, max_articles=max_news)
         entry["news"] = news
