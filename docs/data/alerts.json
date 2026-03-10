@@ -1,5 +1,11 @@
 [
   {
+    "ts": "2026-03-10 15:35 UTC",
+    "type": "digest",
+    "ticker": "",
+    "message": "Morning digest sent at 15:35 UTC"
+  },
+  {
     "ts": "2026-03-10 15:18 UTC",
     "type": "earnings",
     "ticker": "ITX.MC",

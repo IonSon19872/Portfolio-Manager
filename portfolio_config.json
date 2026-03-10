@@ -7,7 +7,7 @@
         "shares": 5,
         "isin": "US5949181045"
       },
-     {
+      {
         "ticker": "ENR.DE",
         "name": "Siemens Energy",
         "shares": 9,
@@ -165,26 +165,24 @@
     "ITX.MC": 52.5
   },
   "morning_prices": {
-    "MSFT": 348.6,
-    "ADBE": 235.54,
-    "ITX.MC": 52.5,
-    "ENR.DE": 159.0,
-    "VH2.DE": 83.0,
-    "MILDEF.ST": 12.3,
-    "GOOG": 264.63,
-    "AIR.PA": 178.02,
-    "HO.PA": 251.1,
-    "NVDA": 159.83,
-    "AMZN": 184.76,
-    "AAPL": 224.58,
-    "LLY": 861.81,
-    "GBF.DE": 109.0,
-    "BA.L": 26.01,
-    "BESI.AS": 173.65,
-    "ASM.AS": 706.0,
-    "SPYY.DE": 252.3,
-    "EUNK.DE": 96.78,
-    "QDVE.DE": 34.6,
-    "IS3N.DE": 41.78
+    "MSFT": 348.27,
+    "ENR.DE": 159.1,
+    "VH2.DE": 83.05,
+    "MILDEF.ST": 12.31,
+    "GOOG": 264.13,
+    "AIR.PA": 178.32,
+    "HO.PA": 251.7,
+    "NVDA": 159.21,
+    "AMZN": 183.78,
+    "AAPL": 224.2,
+    "LLY": 862.37,
+    "GBF.DE": 109.3,
+    "BA.L": 26.09,
+    "BESI.AS": 173.7,
+    "ASM.AS": 705.0,
+    "SPYY.DE": 252.35,
+    "EUNK.DE": 96.68,
+    "QDVE.DE": 34.65,
+    "IS3N.DE": 41.75
   }
 }
