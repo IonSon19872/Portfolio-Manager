@@ -1,14 +1,11 @@
-name: Price Digest (07:45 CET)
-
+name: Price Digest (08:15 CET)
 on:
   schedule:
-    - cron: '45 6 * * 1-5'   # 07:45 CET (UTC+1), Mon-Fri
-    # Summer CEST (UTC+2): change to '45 5 * * 1-5'
+    - cron: '15 7 * * 1-5'   # 08:15 CET (UTC+1)
+    # Summer CEST (UTC+2): change to '15 6 * * 1-5'
   workflow_dispatch: {}
-
 permissions:
   contents: write
-
 jobs:
   price-digest:
     runs-on: ubuntu-latest
@@ -16,22 +13,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-
       - run: pip install requests yfinance mstarpy
-
-      - name: Run price digest (email + snapshot)
+      - name: Run price digest
         env:
-          EMAIL_FROM:      ${{ secrets.EMAIL_FROM }}
-          EMAIL_PASSWORD:  ${{ secrets.EMAIL_PASSWORD }}
-          EMAIL_TO:        ${{ secrets.EMAIL_TO }}
-          DIGEST_MODE:     "full"     # send full portfolio digest email
+          EMAIL_FROM:     ${{ secrets.EMAIL_FROM }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_TO:       ${{ secrets.EMAIL_TO }}
+          DIGEST_MODE:    "full"
         run: python scripts/price_digest.py
-
       - name: Commit snapshot
         run: |
           git config user.name  "Portfolio Bot"
