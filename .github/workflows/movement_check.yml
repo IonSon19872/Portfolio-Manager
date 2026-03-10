@@ -1,14 +1,13 @@
-name: Movement & News Check (4x daily)
-
+name: Movement + Analyst Alerts
 on:
   schedule:
-    - cron: '30 7  * * 1-5'  # 08:30 CET (UTC+1), Mon-Fri
-    - cron: '0  11 * * 1-5'  # 12:00 CET
-    - cron: '15 14 * * 1-5'  # 15:15 CET
-    - cron: '0  16 * * 1-5'  # 17:00 CET
-    # Summer CEST (UTC+2): subtract 1h -> '30 6', '0 10', '15 13', '0 15'
+    - cron: '45 7 * * 1-5'   # 08:45 CET (UTC+1)
+    - cron: '0 10 * * 1-5'   # 11:00 CET
+    - cron: '0 12 * * 1-5'   # 13:00 CET
+    - cron: '45 14 * * 1-5'  # 15:45 CET
+    - cron: '0 16 * * 1-5'   # 17:00 CET
+    # Summer CEST (UTC+2): subtract 1 hour from each
   workflow_dispatch: {}
-
 permissions:
   contents: write
 jobs:
