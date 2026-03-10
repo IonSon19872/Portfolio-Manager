@@ -830,6 +830,94 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
         + week_chg_html + "</div>"
     )
 
+    # -- Holdings table with week change --
+    def _week_chg_for(ticker: str) -> float:
+        for m in week_movements:
+            if m.get("ticker") == ticker:
+                return m.get("move_pct", 0)
+        return 0.0
+
+    def _holding_row_weekly(s: dict) -> str:
+        ticker   = s.get("ticker", "")
+        name     = (s.get("name") or "")[:26]
+        p_raw    = s.get("price_eur")
+        v_raw    = s.get("value_eur")
+        shares   = s.get("shares") or 0
+        p_str    = "{:.2f}".format(float(p_raw)) if p_raw not in (None, "", "--") else "--"
+        v_str    = "{:.2f}".format(float(v_raw)) if v_raw not in (None, "", "--") else "--"
+        if v_str == "--" and p_str != "--" and shares:
+            v_str = "{:.2f}".format(float(p_str) * float(shares))
+
+        wchg     = _week_chg_for(ticker)
+        wcolor   = "#1a7a3a" if wchg >= 0 else "#c0392b"
+        warrow   = "+" if wchg >= 0 else "-"
+        wchg_cell = (
+            "<span style='color:" + wcolor + ";font-weight:600'>"
+            + warrow + " " + "{:.2f}".format(abs(wchg)) + "%"
+            + "</span>"
+        )
+
+        rec      = (s.get("recommendation") or "").replace("_", " ")
+        ms_stars = s.get("star_rating")
+        ms_ar    = s.get("analyst_rating") or ""
+        ar_color = (
+            "#b8860b" if ms_ar == "Gold"
+            else "#707070" if ms_ar == "Silver"
+            else "#8B4513" if ms_ar == "Bronze"
+            else "#c0392b" if ms_ar == "Negative"
+            else "#555555"
+        )
+        if ms_stars:
+            stars_str    = ("★" * ms_stars) + ("☆" * (5 - ms_stars))
+            analyst_html = (
+                "<span style='color:#b8860b'>" + stars_str + "</span>"
+                + (" <span style='color:" + ar_color + ";font-size:10px'>" + ms_ar + "</span>" if ms_ar else "")
+            )
+        elif rec:
+            rc           = "#1a7a3a" if "buy" in rec else "#c0392b" if "sell" in rec else "#b8860b"
+            analyst_html = "<span style='color:" + rc + ";font-size:10px;text-transform:uppercase'>" + rec + "</span>"
+        else:
+            analyst_html = "<span style='color:#555555'>--</span>"
+
+        bd = "border-bottom:1px solid #21293a;background:#87CEFB;color:#0a0a0a"
+        return (
+            "<tr>"
+            "<td style='padding:8px 12px;" + bd + ";color:#06402B;font-weight:700'>" + ticker + "</td>"
+            "<td style='padding:8px 12px;" + bd + ";color:#06402B;font-weight:600'>" + name + "</td>"
+            "<td style='padding:8px 12px;" + bd + "'>" + (("EUR " + p_str) if p_str != "--" else "--") + "</td>"
+            "<td style='padding:8px 12px;" + bd + "'>" + wchg_cell + "</td>"
+            "<td style='padding:8px 12px;" + bd + "'>" + (str(shares) if shares else "--") + "</td>"
+            "<td style='padding:8px 12px;" + bd + ";font-weight:700'>" + (("EUR " + v_str) if v_str != "--" else "--") + "</td>"
+            "<td style='padding:8px 12px;" + bd + "'>" + analyst_html + "</td>"
+            "</tr>"
+        )
+
+    def _holdings_table(items: list) -> str:
+        heads = "".join(
+            "<th style='padding:8px 12px;text-align:left;background:#87CEFB;"
+            "color:#0a0a0a;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+            + h + "</th>"
+            for h in ["Ticker", "Name", "Price EUR", "Week Chg", "Shares", "Value EUR", "Analyst"]
+        )
+        rows = "".join(
+            _holding_row_weekly(s)
+            for s in items
+            if "error" not in s
+        )
+        return (
+            "<table style='width:100%;border-collapse:collapse;"
+            "background:#87CEFB;border-radius:8px;overflow:hidden'>"
+            "<thead><tr>" + heads + "</tr></thead><tbody>" + rows + "</tbody></table>"
+        )
+
+    stocks_table = (
+        "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>Stocks</h2>"
+        + _holdings_table(snapshot.get("stocks", []))
+        + "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 10px'>ETFs</h2>"
+        + _holdings_table(snapshot.get("etfs", []))
+    )
+
+    # -- Top movers block --
     movers_block = ""
     if week_movements:
         top  = sorted(week_movements, key=lambda x: abs(x.get("move_pct", 0)), reverse=True)[:8]
@@ -859,13 +947,14 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
             for h in ["Ticker", "Name", "Mon Open", "Fri Close", "Week Chg"]
         )
         movers_block = (
-            "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>"
+            "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 10px'>"
             "Top Movers This Week</h2>"
             "<table style='width:100%;border-collapse:collapse;background:#1c2330;"
             "border-radius:8px;overflow:hidden;margin-bottom:24px'>"
             "<thead><tr>" + heads + "</tr></thead><tbody>" + rows + "</tbody></table>"
         )
 
+    # -- Rating changes block --
     cutoff      = (datetime.utcnow() - timedelta(days=6)).strftime("%Y-%m-%d")
     all_changes = []
     for h in (intel_data.get("holdings") or []):
@@ -914,7 +1003,7 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
             for h in ["Ticker", "Date", "Firm", "From", "", "To", "Action"]
         )
         ratings_block = (
-            "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 10px'>"
+            "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 10px'>"
             "Rating Changes This Week</h2>"
             "<table style='width:100%;border-collapse:collapse;background:#1c2330;"
             "border-radius:8px;overflow:hidden;margin-bottom:24px'>"
@@ -922,6 +1011,7 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
             "<tbody>" + "".join(_rcrow(c) for c in all_changes) + "</tbody></table>"
         )
 
+    # -- News block --
     news_sections = ""
     for h in (intel_data.get("holdings") or []):
         articles = [a for a in (h.get("news") or []) if a.get("date", "") >= cutoff]
@@ -958,7 +1048,7 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
         )
     if news_sections:
         news_sections = (
-            "<h2 style='font-size:14px;color:#f0f2f5;margin:0 0 12px'>"
+            "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 12px'>"
             "News This Week</h2>" + news_sections
         )
 
@@ -966,7 +1056,11 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
         "<div style='" + _BASE + "'>"
         "<h1 style='font-size:20px;color:#f6ad55;margin:0 0 4px'>Weekly Summary</h1>"
         "<p style='color:#7d8fa8;margin:0 0 24px'>" + now + "</p>"
-        + week_block + movers_block + ratings_block + news_sections
+        + week_block
+        + stocks_table
+        + movers_block
+        + ratings_block
+        + news_sections
         + "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
         "Portfolio Intelligence - GitHub Actions</p>"
         "</div>"
