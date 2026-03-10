@@ -1,11 +1,11 @@
 name: Movement + Analyst Alerts
 on:
   schedule:
-    - cron: '45 7 * * 1-5'   # 08:45 CET (UTC+1)
-    - cron: '0 10 * * 1-5'   # 11:00 CET
-    - cron: '0 12 * * 1-5'   # 13:00 CET
-    - cron: '45 14 * * 1-5'  # 15:45 CET
-    - cron: '0 16 * * 1-5'   # 17:00 CET
+    - cron: '41 7 * * 1-5'   # 08:45 CET (UTC+1)
+    - cron: '19 10 * * 1-5'   # 11:00 CET
+    - cron: '11 12 * * 1-5'   # 13:00 CET
+    - cron: '41 14 * * 1-5'  # 15:45 CET
+    - cron: '23 16 * * 1-5'   # 17:00 CET
     # Summer CEST (UTC+2): subtract 1 hour from each
   workflow_dispatch: {}
 permissions:
