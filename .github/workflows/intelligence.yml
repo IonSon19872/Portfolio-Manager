@@ -3,7 +3,7 @@ name: Intelligence Check (Ratings)
 on:
   schedule:
     - cron: '30 7  * * 1-5'  # 08:30 CET (UTC+1), Mon-Fri
-    - cron: '0  16 * * 1-5'  # 17:00 CET
+    - cron: '45  15 * * 1-5'  # 16:45 CET
     # Summer CEST (UTC+2): '30 6' and '0 15'
   workflow_dispatch: {}
 
