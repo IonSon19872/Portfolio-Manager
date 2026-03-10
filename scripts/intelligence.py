@@ -150,7 +150,8 @@ def main():
 
         # News via RSS
         log.info("    News...")
-        news          = get_company_news(ticker, days_back=news_days_back, max_articles=max_news)
+        news = get_company_news(ticker, days_back=news_days_back,
+                        max_articles=max_news, holding_name=name)
         entry["news"] = news
         total_news   += len(news)
         log.info("    " + str(len(news)) + " article(s)")
