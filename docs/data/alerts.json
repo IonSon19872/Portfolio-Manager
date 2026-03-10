@@ -1,5 +1,47 @@
 [
   {
+    "ts": "2026-03-10 08:53 UTC",
+    "type": "digest",
+    "ticker": "",
+    "message": "Digest sent at 08:53 UTC"
+  },
+  {
+    "ts": "2026-03-10 08:53 UTC",
+    "type": "movement",
+    "ticker": "LLY",
+    "message": "LLY moved DOWN 7.2% (EUR 932.76 -> EUR 865.50)"
+  },
+  {
+    "ts": "2026-03-10 08:53 UTC",
+    "type": "movement",
+    "ticker": "AAPL",
+    "message": "AAPL moved DOWN 7.2% (EUR 240.39 -> EUR 223.06)"
+  },
+  {
+    "ts": "2026-03-10 08:53 UTC",
+    "type": "movement",
+    "ticker": "AMZN",
+    "message": "AMZN moved DOWN 7.2% (EUR 197.48 -> EUR 183.24)"
+  },
+  {
+    "ts": "2026-03-10 08:53 UTC",
+    "type": "movement",
+    "ticker": "NVDA",
+    "message": "NVDA moved DOWN 7.2% (EUR 168.95 -> EUR 156.77)"
+  },
+  {
+    "ts": "2026-03-10 08:53 UTC",
+    "type": "movement",
+    "ticker": "GOOG",
+    "message": "GOOG moved DOWN 7.2% (EUR 283.06 -> EUR 262.65)"
+  },
+  {
+    "ts": "2026-03-10 08:53 UTC",
+    "type": "movement",
+    "ticker": "MSFT",
+    "message": "MSFT moved DOWN 7.2% (EUR 378.70 -> EUR 351.40)"
+  },
+  {
     "ts": "2026-03-10 08:26 UTC",
     "type": "digest",
     "ticker": "",

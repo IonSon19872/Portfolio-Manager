@@ -138,11 +138,24 @@
     "ratings_days_back": 7
   },
   "last_prices": {
-    "MSFT": 378.7,
-    "GOOG": 283.06,
-    "NVDA": 168.95,
-    "AMZN": 197.48,
-    "AAPL": 240.39,
-    "LLY": 932.76
+    "MSFT": 351.4,
+    "GOOG": 262.65,
+    "NVDA": 156.77,
+    "AMZN": 183.24,
+    "AAPL": 223.06,
+    "LLY": 865.5,
+    "ENR.DE": 157.45,
+    "VH2.DE": 82.5,
+    "MILDEF.ST": 12.09,
+    "AIR.PA": 179.04,
+    "HO.PA": 247.4,
+    "GBF.DE": 107.3,
+    "BA.L": 25.8,
+    "BESI.AS": 172.4,
+    "ASM.AS": 703.2,
+    "SPYY.DE": 252.4,
+    "EUNK.DE": 96.58,
+    "QDVE.DE": 34.6,
+    "IS3N.DE": 41.47
   }
 }
