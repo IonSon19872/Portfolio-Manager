@@ -69,6 +69,7 @@ def save_config(cfg: dict):
     safe = json.loads(json.dumps(cfg))
     if os.environ.get("GITHUB_ACTIONS"):
         safe["alerts"]["email_password"] = ""
+    # preserve morning_prices and last_prices — never wipe them
     CONFIG_F.write_text(json.dumps(safe, indent=2))
 
 
