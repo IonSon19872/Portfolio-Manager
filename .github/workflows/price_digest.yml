@@ -22,7 +22,7 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - run: pip install requests yfinance
+      - run: pip install requests yfinance mstarpy
 
       - name: Run price digest (email + snapshot)
         env:
