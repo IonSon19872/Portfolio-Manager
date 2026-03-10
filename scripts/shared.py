@@ -326,8 +326,10 @@ def get_morningstar_data(ticker: str, isin: str) -> dict:
         
 # -- COMPANY NEWS -------------------------------------------------------------
 def get_company_news(ticker: str, _ignored: str = "",
-                     days_back: int = 1, max_articles: int = 3) -> list:
+                     days_back: int = 1, max_articles: int = 3,
+                     holding_name: str = "") -> list:
     cutoff = (date.today() - timedelta(days=days_back)).isoformat()
+    holding_name = holding_name or ticker.split(".")[0]
 
     import urllib.request
     import xml.etree.ElementTree as ET
@@ -388,10 +390,10 @@ def get_company_news(ticker: str, _ignored: str = "",
         yahoo_results.extend(_fetch(url, "Yahoo Finance"))
 
     def _fetch_google():
-        # Use company base name for better Google News results
-        # e.g. "ENR.DE" -> "ENR", "AIR.PA" -> "AIR"
-        base  = ticker.split(".")[0]
-        query = urllib.request.quote(base + " stock")
+        # Use full company name for much better results
+        # e.g. "Siemens Energy stock" instead of "ENR stock"
+        name  = holding_name.split(" ")[:3]  # first 3 words of company name
+        query = urllib.request.quote(" ".join(name) + " stock")
         url   = (
             "https://news.google.com/rss/search?q="
             + query + "&hl=en-US&gl=US&ceid=US:en"
