@@ -69,45 +69,75 @@ def build_snapshot(cfg: dict) -> dict:
 
 
 def check_movements_and_ratings(snapshot: dict, cfg: dict) -> int:
-    threshold   = cfg["alerts"].get("movement_threshold_pct", 3.0)
-    last_prices = cfg.get("last_prices", {})
-    intel_data  = load_json(INTEL_F, {"holdings": []})
+    threshold    = cfg["alerts"].get("movement_threshold_pct", 3.0)
+    last_prices  = cfg.get("last_prices", {})
+    morning_prices = cfg.get("morning_prices", {})  # saved by full digest run
+    intel_data   = load_json(INTEL_F, {"holdings": []})
 
     movement_alerts = []
     rating_alerts   = []
 
-    # --- Price movements ---
     for item in snapshot["stocks"] + snapshot["etfs"]:
         if "error" in item or not item.get("price_eur"):
             continue
         ticker    = item["ticker"]
         price_now = item["price_eur"]
-        prev      = last_prices.get(ticker)
+        prev_call = last_prices.get(ticker)    # price from last movement check
+        morning   = morning_prices.get(ticker) # price from morning digest
 
-        if prev and prev > 0:
-            move = ((price_now - prev) / prev) * 100
-            if abs(move) >= threshold:
-                direction = "UP" if move > 0 else "DOWN"
+        triggered = False
+
+        # Check 1: moved more than 3% from morning price
+        if morning and morning > 0:
+            move_from_morning = ((price_now - morning) / morning) * 100
+            if abs(move_from_morning) >= threshold:
+                direction = "UP" if move_from_morning > 0 else "DOWN"
                 msg = (
                     ticker + " " + direction + " " +
-                    "{:.1f}".format(abs(move)) + "% " +
-                    "(EUR " + "{:.2f}".format(prev) +
+                    "{:.1f}".format(abs(move_from_morning)) + "% from morning" +
+                    " (EUR " + "{:.2f}".format(morning) +
                     " -> EUR " + "{:.2f}".format(price_now) + ")"
                 )
-                log.info("  MOVE: " + msg)
-                append_alert("movement", ticker, msg)
+                log.info("  MOVE FROM MORNING: " + msg)
+                append_alert("movement_morning", ticker, msg)
                 movement_alerts.append({
-                    "ticker":    ticker,
-                    "name":      item.get("name", ticker),
-                    "price_now": price_now,
-                    "price_prev": prev,
-                    "move_pct":  move,
-                    "direction": direction,
+                    "ticker":     ticker,
+                    "name":       item.get("name", ticker),
+                    "price_now":  price_now,
+                    "price_prev": morning,
+                    "move_pct":   move_from_morning,
+                    "direction":  direction,
+                    "label":      "vs Morning",
+                })
+                triggered = True
+
+        # Check 2: moved more than 1% since last call (only if not already alerted)
+        if not triggered and prev_call and prev_call > 0:
+            move_from_last = ((price_now - prev_call) / prev_call) * 100
+            # UP more than 1% or DOWN more than 1%
+            if move_from_last >= 1.0 or move_from_last <= -1.0:
+                direction = "UP" if move_from_last > 0 else "DOWN"
+                msg = (
+                    ticker + " " + direction + " " +
+                    "{:.1f}".format(abs(move_from_last)) + "% since last check" +
+                    " (EUR " + "{:.2f}".format(prev_call) +
+                    " -> EUR " + "{:.2f}".format(price_now) + ")"
+                )
+                log.info("  MOVE SINCE LAST: " + msg)
+                append_alert("movement_last", ticker, msg)
+                movement_alerts.append({
+                    "ticker":     ticker,
+                    "name":       item.get("name", ticker),
+                    "price_now":  price_now,
+                    "price_prev": prev_call,
+                    "move_pct":   move_from_last,
+                    "direction":  direction,
+                    "label":      "vs Last Check",
                 })
 
         last_prices[ticker] = price_now
 
-    # --- Analyst rating changes (from latest intelligence run) ---
+    # Analyst rating changes from today
     today = datetime.utcnow().strftime("%Y-%m-%d")
     for h in intel_data.get("holdings", []):
         for r in h.get("new_ratings", []):
@@ -132,7 +162,7 @@ def check_movements_and_ratings(snapshot: dict, cfg: dict) -> int:
         log.info("  Nothing to alert")
         return 0
 
-    # --- Build combined alert email ---
+    # Build combined alert email
     now  = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     html = "<div style='" + _BASE + "'>"
     html += (
@@ -147,7 +177,7 @@ def check_movements_and_ratings(snapshot: dict, cfg: dict) -> int:
             "background:#87CEFB;border-radius:8px;overflow:hidden;margin-bottom:24px'>"
             "<thead><tr>"
         )
-        for h_txt in ["Ticker", "Name", "Prev EUR", "Now EUR", "Change"]:
+        for h_txt in ["Ticker", "Name", "From EUR", "Now EUR", "Change", "Reference"]:
             html += (
                 "<th style='padding:8px 12px;text-align:left;background:#87CEFB;"
                 "color:#0a0a0a;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
@@ -160,12 +190,13 @@ def check_movements_and_ratings(snapshot: dict, cfg: dict) -> int:
             bd    = "border-bottom:1px solid #21293a;background:#87CEFB;color:#0a0a0a"
             html += (
                 "<tr>"
-                "<td style='padding:9px 12px;" + bd + ";color:#FFBF00;font-weight:700'>" + m["ticker"] + "</td>"
-                "<td style='padding:9px 12px;" + bd + ";color:#FFBF00'>" + m["name"][:24] + "</td>"
+                "<td style='padding:9px 12px;" + bd + ";color:#06402B;font-weight:700'>" + m["ticker"] + "</td>"
+                "<td style='padding:9px 12px;" + bd + ";color:#06402B'>" + m["name"][:22] + "</td>"
                 "<td style='padding:9px 12px;" + bd + "'>EUR " + "{:.2f}".format(m["price_prev"]) + "</td>"
                 "<td style='padding:9px 12px;" + bd + "'>EUR " + "{:.2f}".format(m["price_now"]) + "</td>"
                 "<td style='padding:9px 12px;" + bd + ";color:" + col + ";font-weight:700'>"
                 + arrow + " " + "{:.2f}".format(abs(m["move_pct"])) + "%</td>"
+                "<td style='padding:9px 12px;" + bd + ";color:#7d8fa8;font-size:10px'>" + m.get("label", "") + "</td>"
                 "</tr>"
             )
         html += "</tbody></table>"
@@ -198,8 +229,8 @@ def check_movements_and_ratings(snapshot: dict, cfg: dict) -> int:
             bd    = "border-bottom:1px solid #21293a;background:#87CEFB;color:#0a0a0a"
             html += (
                 "<tr>"
-                "<td style='padding:9px 12px;" + bd + ";color:#FFBF00;font-weight:700'>" + r["ticker"] + "</td>"
-                "<td style='padding:9px 12px;" + bd + ";color:#FFBF00'>" + r["name"][:22] + "</td>"
+                "<td style='padding:9px 12px;" + bd + ";color:#06402B;font-weight:700'>" + r["ticker"] + "</td>"
+                "<td style='padding:9px 12px;" + bd + ";color:#06402B'>" + r["name"][:22] + "</td>"
                 "<td style='padding:9px 12px;" + bd + "'>" + r.get("firm", "") + "</td>"
                 "<td style='padding:9px 12px;" + bd + ";text-decoration:line-through'>" + (r.get("from_grade") or "--") + "</td>"
                 "<td style='padding:9px 12px;" + bd + "'>-></td>"
@@ -407,6 +438,15 @@ def main():
     log.info("Total portfolio value: EUR " + "{:,.2f}".format(snapshot["total_eur"]))
 
     save_json(SNAPSHOT_F, snapshot)
+
+    # Save morning prices as baseline for intraday movement checks
+    cfg["morning_prices"] = {
+        item["ticker"]: item["price_eur"]
+        for item in snapshot["stocks"] + snapshot["etfs"]
+        if "error" not in item and item.get("price_eur")
+    }
+    save_config(cfg)
+  
     log.info("Snapshot saved -> " + str(SNAPSHOT_F))
 
     if datetime.utcnow().weekday() == 0:
