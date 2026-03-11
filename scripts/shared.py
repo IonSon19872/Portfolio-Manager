@@ -1452,3 +1452,64 @@ def get_openrouter_sentiment(ticker: str, name: str) -> dict:
     except Exception as e:
         log.warning("  OpenRouter failed for " + ticker + ": " + str(e))
         return {}
+
+def sentiment_html(sentiments: list) -> str:
+    if not sentiments:
+        return ""
+
+    def _color(s):
+        return (
+            "#1a7a3a" if s == "Bullish"
+            else "#c0392b" if s == "Bearish"
+            else "#b8860b"
+        )
+
+    def _badge(s):
+        col = _color(s)
+        return (
+            "<span style='background:" + col + ";color:#fff;"
+            "padding:2px 8px;border-radius:4px;font-size:10px;"
+            "font-weight:700;text-transform:uppercase'>" + s + "</span>"
+        )
+
+    rows = ""
+    for item in sentiments:
+        bd    = "border-bottom:1px solid #21293a;background:#1c2330;color:#f0f2f5"
+        lower = item.get("lower_bound", "")
+        upper = item.get("upper_bound", "")
+        range_str = (lower + " – " + upper) if lower and upper else "--"
+        contra = item.get("contra", "") or "--"
+        rows += (
+            "<tr>"
+            "<td style='padding:10px 12px;" + bd + ";color:#4f9ef8;"
+            "font-weight:700;white-space:nowrap'>" + item["ticker"] + "</td>"
+            "<td style='padding:10px 12px;" + bd + ";color:#7d8fa8'>"
+            + item["name"][:18] + "</td>"
+            "<td style='padding:10px 12px;" + bd + ";text-align:center'>"
+            + _badge(item["sentiment"]) + "</td>"
+            "<td style='padding:10px 12px;" + bd + ";font-size:11px;color:#c0cad8'>"
+            + item.get("rationale", item.get("summary", ""))[:200] + "</td>"
+            "<td style='padding:10px 12px;" + bd + ";font-size:11px;"
+            "color:#52d68a;white-space:nowrap'>" + range_str + "</td>"
+            "<td style='padding:10px 12px;" + bd + ";font-size:11px;color:#f56565'>"
+            + contra[:120] + "</td>"
+            "</tr>"
+        )
+
+    heads = "".join(
+        "<th style='padding:8px 12px;text-align:left;background:#1c2330;"
+        "color:#7d8fa8;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+        + h + "</th>"
+        for h in ["Ticker", "Name", "Sentiment", "Rationale", "Weekly Range", "Contra-View"]
+    )
+
+    return (
+        "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 10px'>"
+        "AI Sentiment Analysis</h2>"
+        "<p style='color:#7d8fa8;font-size:11px;margin:0 0 12px'>"
+        "Powered by OpenRouter · Based on last 7 days</p>"
+        "<table style='width:100%;border-collapse:collapse;background:#1c2330;"
+        "border-radius:8px;overflow:hidden;margin-bottom:24px'>"
+        "<thead><tr>" + heads + "</tr></thead>"
+        "<tbody>" + rows + "</tbody></table>"
+    )
