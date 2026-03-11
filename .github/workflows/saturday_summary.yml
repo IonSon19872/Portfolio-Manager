@@ -1,19 +1,15 @@
 name: Saturday Weekly Summary
-
 on:
   schedule:
     - cron: '0 9 * * 6'   # 10:00 CET (UTC+1), Saturday
                            # Summer CEST (UTC+2): change to '0 8 * * 6'
   workflow_dispatch: {}    # manual trigger anytime
-
 permissions:
   contents: write
-
 jobs:
   saturday-summary:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
       - uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
