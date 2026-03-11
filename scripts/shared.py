@@ -804,7 +804,7 @@ def news_digest_html(holdings_with_news: list, run_label: str) -> str:
 
 
 def saturday_summary_html(snapshot: dict, intel_data: dict,
-                           week_movements: list) -> str:
+                           week_movements: list, sentiments: list = []) -> str:
     now        = datetime.utcnow().strftime("%A, %d %B %Y - %H:%M UTC")
     total_eur  = snapshot.get("total_eur", 0)
     week_start = snapshot.get("week_start_eur")
@@ -1059,6 +1059,7 @@ def saturday_summary_html(snapshot: dict, intel_data: dict,
         "<p style='color:#7d8fa8;margin:0 0 24px'>" + now + "</p>"
         + week_block
         + stocks_table
+        + sentiment_html(sentiments)
         + movers_block
         + ratings_block
         + news_sections
@@ -1165,4 +1166,136 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
         "<p style='color:#7d8fa8;font-size:11px;margin:0 0 16px'>"
         + next_mon + " - " + next_fri + "</p>"
         + body
+    )
+
+def get_perplexity_sentiment(ticker: str, name: str) -> dict:
+    """
+    Fetch trading sentiment for a stock via Perplexity API.
+    Returns dict with sentiment (Bullish/Neutral/Bearish) and summary (2-3 sentences).
+    """
+    import urllib.request
+    import json
+
+    api_key = os.environ.get("PERPLEXITY_API_KEY", "")
+    if not api_key:
+        log.warning("  PERPLEXITY_API_KEY not set")
+        return {}
+
+    prompt = (
+        "Analyze the current trading sentiment for " + name + " (" + ticker + "). "
+        "Search for the latest news, analyst opinions, Reddit discussions, and social media. "
+        "Reply in exactly this format:\n"
+        "SENTIMENT: [Bullish/Neutral/Bearish]\n"
+        "SUMMARY: [2-3 sentences explaining the key reasons for this sentiment, "
+        "mentioning specific recent events or data points if available]"
+    )
+
+    payload = json.dumps({
+        "model": "sonar",
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are a financial analyst. Be concise and factual. "
+                    "Always base your answer on the most recent available information."
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        "max_tokens": 200,
+        "temperature": 0.2,
+        "search_recency_filter": "week",
+        "return_citations": False,
+    }).encode("utf-8")
+
+    try:
+        req = urllib.request.Request(
+            "https://api.perplexity.ai/chat/completions",
+            data=payload,
+            headers={
+                "Authorization": "Bearer " + api_key,
+                "Content-Type":  "application/json",
+                "Accept":        "application/json",
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        text = data["choices"][0]["message"]["content"].strip()
+        log.info("  Perplexity raw: " + text[:80])
+
+        # Parse SENTIMENT and SUMMARY from response
+        sentiment = "Neutral"
+        summary   = text
+
+        for line in text.splitlines():
+            line = line.strip()
+            if line.upper().startswith("SENTIMENT:"):
+                val = line.split(":", 1)[1].strip().capitalize()
+                if val in ("Bullish", "Bearish", "Neutral"):
+                    sentiment = val
+            elif line.upper().startswith("SUMMARY:"):
+                summary = line.split(":", 1)[1].strip()
+
+        log.info("  " + ticker + " sentiment: " + sentiment)
+        return {"sentiment": sentiment, "summary": summary}
+
+    except Exception as e:
+        log.warning("  Perplexity failed for " + ticker + ": " + str(e))
+        return {}
+
+def sentiment_html(sentiments: list) -> str:
+    """Render sentiment analysis table for weekly summary."""
+    if not sentiments:
+        return ""
+
+    def _color(s):
+        return (
+            "#1a7a3a" if s == "Bullish"
+            else "#c0392b" if s == "Bearish"
+            else "#b8860b"
+        )
+
+    def _badge(s):
+        col = _color(s)
+        return (
+            "<span style='background:" + col + ";color:#fff;"
+            "padding:2px 8px;border-radius:4px;font-size:10px;"
+            "font-weight:700;text-transform:uppercase'>" + s + "</span>"
+        )
+
+    rows = ""
+    for item in sentiments:
+        bd = "border-bottom:1px solid #21293a;background:#1c2330;color:#f0f2f5"
+        rows += (
+            "<tr>"
+            "<td style='padding:10px 12px;" + bd + ";color:#4f9ef8;"
+            "font-weight:700;white-space:nowrap'>" + item["ticker"] + "</td>"
+            "<td style='padding:10px 12px;" + bd + ";color:#7d8fa8'>"
+            + item["name"][:22] + "</td>"
+            "<td style='padding:10px 12px;" + bd + ";text-align:center'>"
+            + _badge(item["sentiment"]) + "</td>"
+            "<td style='padding:10px 12px;" + bd + ";font-size:12px;color:#c0cad8'>"
+            + item["summary"] + "</td>"
+            "</tr>"
+        )
+
+    heads = "".join(
+        "<th style='padding:8px 12px;text-align:left;background:#1c2330;"
+        "color:#7d8fa8;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
+        + h + "</th>"
+        for h in ["Ticker", "Name", "Sentiment", "Analysis"]
+    )
+
+    return (
+        "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 10px'>"
+        "AI Sentiment Analysis</h2>"
+        "<table style='width:100%;border-collapse:collapse;background:#1c2330;"
+        "border-radius:8px;overflow:hidden;margin-bottom:24px'>"
+        "<thead><tr>" + heads + "</tr></thead>"
+        "<tbody>" + rows + "</tbody></table>"
     )
