@@ -167,9 +167,37 @@
       "morningstar": {}
     },
     {
+      "ticker": "BTC-USD",
+      "name": "Bitcoin",
+      "ratings": [],
+      "news": [],
+      "new_ratings": []
+    },
+    {
+      "ticker": "GC=F",
+      "name": "Gold",
+      "ratings": [],
+      "news": [],
+      "new_ratings": []
+    },
+    {
+      "ticker": "SI=F",
+      "name": "Silver",
+      "ratings": [],
+      "news": [],
+      "new_ratings": []
+    },
+    {
       "ticker": "NVDA",
       "name": "NVIDIA",
       "ratings": [
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
         {
           "date": "2026-03-05",
           "firm": "Tigress Financial",
@@ -280,6 +308,20 @@
       "ticker": "AAPL",
       "name": "Apple",
       "ratings": [
+        {
+          "date": "2026-03-05",
+          "firm": "Wedbush",
+          "from_grade": "Outperform",
+          "to_grade": "Outperform",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Rosenblatt",
+          "from_grade": "Neutral",
+          "to_grade": "Neutral",
+          "action": "reit"
+        },
         {
           "date": "2026-03-05",
           "firm": "Wedbush",
@@ -475,6 +517,34 @@
       "new_ratings": [],
       "news": [],
       "morningstar": {}
+    },
+    {
+      "ticker": "CAT",
+      "name": "Caterpillar",
+      "ratings": [],
+      "news": [],
+      "new_ratings": []
+    },
+    {
+      "ticker": "IBE.MC",
+      "name": "Iberdrola",
+      "ratings": [],
+      "news": [],
+      "new_ratings": []
+    },
+    {
+      "ticker": "SNDK",
+      "name": "SanDisk",
+      "ratings": [],
+      "news": [],
+      "new_ratings": []
+    },
+    {
+      "ticker": "SMHN.DE",
+      "name": "S\u00dcSS MicroTec",
+      "ratings": [],
+      "news": [],
+      "new_ratings": []
     },
     {
       "ticker": "SPYY.DE",
