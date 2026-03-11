@@ -1323,3 +1323,132 @@ def get_perplexity_sentiment(ticker: str, name: str) -> dict:
     except Exception as e:
         log.warning("  Perplexity failed for " + ticker + ": " + str(e))
         return {}
+
+
+def get_openrouter_sentiment(ticker: str, name: str) -> dict:
+    """
+    Fetch trading sentiment via OpenRouter API using Gemini Flash (free, web search enabled).
+    """
+    import urllib.request
+    import json
+
+    api_key = os.environ.get("OPENROUTER_API_KEY", "")
+    if not api_key:
+        log.warning("  OPENROUTER_API_KEY not set")
+        return {}
+
+    prompt = (
+        "Role: You are a Senior Quantitative Financial Analyst with expertise "
+        "in European and US equity markets.\n\n"
+        "Task: Analyze the current market position, sentiment, and probable price "
+        "range for " + ticker + " (" + name + ").\n\n"
+        "Instructions:\n"
+        "1. NEWS & FUNDAMENTALS (last 7 days): Search for recent news from Reuters, "
+        "Bloomberg, and where relevant German/European sources (Handelsblatt, "
+        "Börse Frankfurt, Der Aktionär). Identify earnings, guidance changes, "
+        "analyst upgrades/downgrades, M&A activity, or macro events.\n"
+        "2. SOCIAL SENTIMENT: Check Reddit (r/stocks, r/investing, r/wallstreetbets, "
+        "r/mauerstrassenwetten). Identify dominant retail sentiment.\n"
+        "3. TECHNICAL CONTEXT: Identify support and resistance levels. Estimate a "
+        "70% probability weekly price range. All prices must be in EUR.\n"
+        "4. RISK ASSESSMENT: Identify the single biggest downside risk this week.\n\n"
+        "Format your response EXACTLY as follows, no extra text before or after:\n\n"
+        "SENTIMENT: [Bullish / Neutral / Bearish]\n\n"
+        "RATIONALE: [Maximum 2 sentences. Be specific — cite the actual event or "
+        "data point driving sentiment.]\n\n"
+        "WEEKLY RANGE (70% Probability):\n"
+        "  Lower Bound: €[Price] — [Short reason]\n"
+        "  Upper Bound: €[Price] — [Short reason]\n\n"
+        "CONTRA-VIEW: [1 sentence on the single biggest risk that could invalidate "
+        "this outlook this week.]"
+    )
+
+    payload = json.dumps({
+        "model": "google/gemini-2.0-flash-exp:free",
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are a financial analyst. Be concise and factual. "
+                    "Always base your answer on the most recent available information."
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        "max_tokens": 400,
+        "temperature": 0.2,
+    }).encode("utf-8")
+
+    try:
+        req = urllib.request.Request(
+            "https://openrouter.ai/api/v1/chat/completions",
+            data=payload,
+            headers={
+                "Authorization":  "Bearer " + api_key,
+                "Content-Type":   "application/json",
+                "Accept":         "application/json",
+                "HTTP-Referer":   "https://github.com/portfolio-monitor",
+                "X-Title":        "Portfolio Monitor",
+            },
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        text = data["choices"][0]["message"]["content"].strip()
+        log.info("  OpenRouter raw: " + text[:80])
+
+        # Parse structured response
+        sentiment   = "Neutral"
+        rationale   = ""
+        lower_bound = ""
+        upper_bound = ""
+        contra      = ""
+        current_section = None
+
+        for line in text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if line.upper().startswith("SENTIMENT:"):
+                val = line.split(":", 1)[1].strip().capitalize()
+                if val in ("Bullish", "Bearish", "Neutral"):
+                    sentiment = val
+            elif line.upper().startswith("RATIONALE:"):
+                rationale = line.split(":", 1)[1].strip()
+                current_section = "rationale"
+            elif "LOWER BOUND" in line.upper():
+                lower_bound = line.split(":", 1)[1].strip() if ":" in line else line
+            elif "UPPER BOUND" in line.upper():
+                upper_bound = line.split(":", 1)[1].strip() if ":" in line else line
+            elif line.upper().startswith("CONTRA-VIEW:") or line.upper().startswith("CONTRA VIEW:"):
+                contra = line.split(":", 1)[1].strip()
+                current_section = "contra"
+            elif current_section == "rationale" and not any(
+                x in line.upper() for x in
+                ["WEEKLY RANGE", "LOWER BOUND", "UPPER BOUND", "CONTRA"]
+            ):
+                rationale += " " + line
+
+        summary = rationale
+        if lower_bound and upper_bound:
+            summary += " | Range: " + lower_bound + " – " + upper_bound
+        if contra:
+            summary += " | Risk: " + contra
+
+        log.info("  " + ticker + " sentiment: " + sentiment)
+        return {
+            "sentiment":   sentiment,
+            "summary":     summary,
+            "rationale":   rationale,
+            "lower_bound": lower_bound,
+            "upper_bound": upper_bound,
+            "contra":      contra,
+        }
+
+    except Exception as e:
+        log.warning("  OpenRouter failed for " + ticker + ": " + str(e))
+        return {}
