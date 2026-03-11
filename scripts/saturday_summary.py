@@ -168,6 +168,9 @@ def main():
                 "contra":      result.get("contra",      ""),
             })
         time.sleep(2)  # stay well within free tier rate limits
+      # 2. THEN build the email
+    log.info("--- Building and sending Saturday email ---")
+    past_html = saturday_summary_html(snapshot, intel_data, week_movements, sentiments)
   
     cal_html  = next_week_calendar_html(calendar, fmt_date(next_mon), fmt_date(next_fri))
 
