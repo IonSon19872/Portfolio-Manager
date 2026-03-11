@@ -19,8 +19,7 @@ from shared import (
     load_config, load_json, save_json, append_alert, send_email,
     SNAPSHOT_F, INTEL_F, DATA_DIR,
     get_stock_data, get_earnings_calendar, get_dividends, get_stock_splits,
-    get_openrouter_sentiment,
-    saturday_summary_html, next_week_calendar_html, sentiment_html,
+    saturday_summary_html, next_week_calendar_html, 
     log
 )
 import time
@@ -141,27 +140,7 @@ def main():
     next_mon = calendar["next_mon"]
     next_fri = calendar["next_fri"]
 
-    log.info("--- Fetching OpenRouter sentiment ---")
-    sentiments = []
-    for h in cfg["portfolio"]["stocks"]:
-        ticker = (h.get("ticker") or "").strip()
-        name   = h.get("name", ticker)
-        if not ticker:
-            continue
-        log.info("  Sentiment: " + ticker)
-        result = get_openrouter_sentiment(ticker, name)
-        if result:
-            sentiments.append({
-                "ticker":      ticker,
-                "name":        name,
-                "sentiment":   result.get("sentiment",   "Neutral"),
-                "summary":     result.get("summary",     ""),
-                "rationale":   result.get("rationale",   ""),
-                "lower_bound": result.get("lower_bound", ""),
-                "upper_bound": result.get("upper_bound", ""),
-                "contra":      result.get("contra",      ""),
-            })
-        time.sleep(2)
+
 
     log.info("--- Building and sending Saturday email ---")
     past_html = saturday_summary_html(snapshot, intel_data, week_movements, sentiments)
