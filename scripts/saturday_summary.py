@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from shared import (
     load_config, load_json, save_json, append_alert, send_email,
     SNAPSHOT_F, INTEL_F, DATA_DIR,
-    get_perplexity_sentiment,
+    get_openrouter_sentiment,
     saturday_summary_html, next_week_calendar_html, sentiment_html,
     log
 )
@@ -146,24 +146,27 @@ def main():
     past_html = saturday_summary_html(snapshot, intel_data, week_movements, sentiments)
 
     # Fetch AI sentiment for all stocks (skip ETFs, skip 0-share watchlist optional)
-    log.info("--- Fetching Perplexity sentiment ---")
+    log.info("--- Fetching OpenRouter sentiment ---")
     sentiments = []
-    all_stocks = cfg["portfolio"]["stocks"]
-    for h in all_stocks:
+    for h in cfg["portfolio"]["stocks"]:
         ticker = (h.get("ticker") or "").strip()
         name   = h.get("name", ticker)
         if not ticker:
             continue
         log.info("  Sentiment: " + ticker)
-        result = get_perplexity_sentiment(ticker, name)
+        result = get_openrouter_sentiment(ticker, name)
         if result:
             sentiments.append({
-                "ticker":    ticker,
-                "name":      name,
-                "sentiment": result.get("sentiment", "Neutral"),
-                "summary":   result.get("summary", ""),
+                "ticker":      ticker,
+                "name":        name,
+                "sentiment":   result.get("sentiment",   "Neutral"),
+                "summary":     result.get("summary",     ""),
+                "rationale":   result.get("rationale",   ""),
+                "lower_bound": result.get("lower_bound", ""),
+                "upper_bound": result.get("upper_bound", ""),
+                "contra":      result.get("contra",      ""),
             })
-        time.sleep(1)  # avoid rate limiting
+        time.sleep(2)  # stay well within free tier rate limits
   
     cal_html  = next_week_calendar_html(calendar, fmt_date(next_mon), fmt_date(next_fri))
 
