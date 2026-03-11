@@ -1171,10 +1171,10 @@ def next_week_calendar_html(calendar: dict, next_mon: str, next_fri: str) -> str
 def get_perplexity_sentiment(ticker: str, name: str) -> dict:
     """
     Fetch trading sentiment for a stock via Perplexity API.
-    Returns dict with sentiment (Bullish/Neutral/Bearish) and summary (2-3 sentences).
+    Returns dict with sentiment, rationale, lower_bound, upper_bound, contra.
     """
     import urllib.request
-    import json
+    import json as _json
 
     api_key = os.environ.get("PERPLEXITY_API_KEY", "")
     if not api_key:
@@ -1182,33 +1182,51 @@ def get_perplexity_sentiment(ticker: str, name: str) -> dict:
         return {}
 
     prompt = (
-        "Analyze the current trading sentiment for " + name + " (" + ticker + "). "
-        "Search for the latest news, analyst opinions, Reddit discussions, and social media. "
-        "Reply in exactly this format:\n"
-        "SENTIMENT: [Bullish/Neutral/Bearish]\n"
-        "SUMMARY: [2-3 sentences explaining the key reasons for this sentiment, "
-        "mentioning specific recent events or data points if available]"
+        "Role: You are a Senior Quantitative Financial Analyst with expertise "
+        "in European and US equity markets.\n\n"
+        "Task: Analyze the current market position, sentiment, and probable price "
+        "range for " + ticker + " (" + name + ").\n\n"
+        "Instructions:\n"
+        "1. NEWS & FUNDAMENTALS (last 7 days): Search for recent news from Reuters, "
+        "Bloomberg, and where relevant German/European sources (Handelsblatt, "
+        "Börse Frankfurt, Der Aktionär). Identify earnings, guidance changes, "
+        "analyst upgrades/downgrades, M&A activity, or macro events.\n"
+        "2. SOCIAL SENTIMENT: Check Reddit (r/stocks, r/investing, r/wallstreetbets, "
+        "r/mauerstrassenwetten). Identify dominant retail sentiment.\n"
+        "3. TECHNICAL CONTEXT: Identify support and resistance levels. Estimate a "
+        "70% probability weekly price range. All prices must be in EUR.\n"
+        "4. RISK ASSESSMENT: Identify the single biggest downside risk this week.\n\n"
+        "Format your response EXACTLY as follows, no extra text before or after:\n\n"
+        "SENTIMENT: [Bullish / Neutral / Bearish]\n\n"
+        "RATIONALE: [Maximum 2 sentences. Be specific — cite the actual event or "
+        "data point driving sentiment.]\n\n"
+        "WEEKLY RANGE (70% Probability):\n"
+        "  Lower Bound: €[Price] — [Short reason]\n"
+        "  Upper Bound: €[Price] — [Short reason]\n\n"
+        "CONTRA-VIEW: [1 sentence on the single biggest risk that could invalidate "
+        "this outlook this week.]"
     )
 
-    payload = json.dumps({
-        "model": "sonar",
+    payload = _json.dumps({
+        "model":                 "sonar",
         "messages": [
             {
-                "role": "system",
+                "role":    "system",
                 "content": (
                     "You are a financial analyst. Be concise and factual. "
-                    "Always base your answer on the most recent available information."
+                    "Always base your answer on the most recent available information. "
+                    "Never add introductory text. Reply only in the exact format requested."
                 )
             },
             {
-                "role": "user",
+                "role":    "user",
                 "content": prompt
             }
         ],
-        "max_tokens": 200,
-        "temperature": 0.2,
+        "max_tokens":            350,
+        "temperature":           0.2,
         "search_recency_filter": "week",
-        "return_citations": False,
+        "return_citations":      False,
     }).encode("utf-8")
 
     try:
@@ -1222,80 +1240,86 @@ def get_perplexity_sentiment(ticker: str, name: str) -> dict:
             },
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = _json.loads(resp.read().decode("utf-8"))
 
         text = data["choices"][0]["message"]["content"].strip()
-        log.info("  Perplexity raw: " + text[:80])
+        log.info("  Perplexity raw (" + ticker + "): " + text[:120])
 
-        # Parse SENTIMENT and SUMMARY from response
-        sentiment = "Neutral"
-        summary   = text
+        # --- Parse response ---
+        sentiment   = "Neutral"
+        rationale   = ""
+        lower_bound = ""
+        upper_bound = ""
+        contra      = ""
+        current_section = None
 
         for line in text.splitlines():
             line = line.strip()
-            if line.upper().startswith("SENTIMENT:"):
+            if not line:
+                continue
+
+            lu = line.upper()
+
+            if lu.startswith("SENTIMENT:"):
                 val = line.split(":", 1)[1].strip().capitalize()
                 if val in ("Bullish", "Bearish", "Neutral"):
                     sentiment = val
-            elif line.upper().startswith("SUMMARY:"):
-                summary = line.split(":", 1)[1].strip()
+                current_section = None
 
-        log.info("  " + ticker + " sentiment: " + sentiment)
-        return {"sentiment": sentiment, "summary": summary}
+            elif lu.startswith("RATIONALE:"):
+                rationale = line.split(":", 1)[1].strip()
+                current_section = "rationale"
+
+            elif lu.startswith("WEEKLY RANGE"):
+                current_section = "range"
+
+            elif lu.startswith("LOWER BOUND:"):
+                lower_bound = line.split(":", 1)[1].strip()
+                current_section = "range"
+
+            elif lu.startswith("UPPER BOUND:"):
+                upper_bound = line.split(":", 1)[1].strip()
+                current_section = "range"
+
+            elif lu.startswith("CONTRA-VIEW:") or lu.startswith("CONTRA VIEW:"):
+                contra = line.split(":", 1)[1].strip()
+                current_section = "contra"
+
+            else:
+                # Continuation lines for multi-line sections
+                if current_section == "rationale":
+                    rationale += " " + line
+                elif current_section == "contra":
+                    contra += " " + line
+                elif current_section == "range":
+                    # Handle indented Lower/Upper lines without the label
+                    if "lower" in lu:
+                        lower_bound = line.split(":", 1)[-1].strip() if ":" in line else line
+                    elif "upper" in lu:
+                        upper_bound = line.split(":", 1)[-1].strip() if ":" in line else line
+
+        # Build summary for fallback display
+        summary = rationale
+        if lower_bound and upper_bound:
+            summary += " | Range: " + lower_bound + " – " + upper_bound
+        if contra:
+            summary += " | Risk: " + contra
+
+        log.info(
+            "  " + ticker + " → " + sentiment +
+            " | range: " + (lower_bound or "?") + " – " + (upper_bound or "?")
+        )
+
+        return {
+            "sentiment":   sentiment,
+            "summary":     summary,
+            "rationale":   rationale,
+            "lower_bound": lower_bound,
+            "upper_bound": upper_bound,
+            "contra":      contra,
+        }
 
     except Exception as e:
         log.warning("  Perplexity failed for " + ticker + ": " + str(e))
         return {}
-
-def sentiment_html(sentiments: list) -> str:
-    """Render sentiment analysis table for weekly summary."""
-    if not sentiments:
-        return ""
-
-    def _color(s):
-        return (
-            "#1a7a3a" if s == "Bullish"
-            else "#c0392b" if s == "Bearish"
-            else "#b8860b"
-        )
-
-    def _badge(s):
-        col = _color(s)
-        return (
-            "<span style='background:" + col + ";color:#fff;"
-            "padding:2px 8px;border-radius:4px;font-size:10px;"
-            "font-weight:700;text-transform:uppercase'>" + s + "</span>"
-        )
-
-    rows = ""
-    for item in sentiments:
-        bd = "border-bottom:1px solid #21293a;background:#1c2330;color:#f0f2f5"
-        rows += (
-            "<tr>"
-            "<td style='padding:10px 12px;" + bd + ";color:#4f9ef8;"
-            "font-weight:700;white-space:nowrap'>" + item["ticker"] + "</td>"
-            "<td style='padding:10px 12px;" + bd + ";color:#7d8fa8'>"
-            + item["name"][:22] + "</td>"
-            "<td style='padding:10px 12px;" + bd + ";text-align:center'>"
-            + _badge(item["sentiment"]) + "</td>"
-            "<td style='padding:10px 12px;" + bd + ";font-size:12px;color:#c0cad8'>"
-            + item["summary"] + "</td>"
-            "</tr>"
-        )
-
-    heads = "".join(
-        "<th style='padding:8px 12px;text-align:left;background:#1c2330;"
-        "color:#7d8fa8;font-size:10px;text-transform:uppercase;letter-spacing:1px'>"
-        + h + "</th>"
-        for h in ["Ticker", "Name", "Sentiment", "Analysis"]
-    )
-
-    return (
-        "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 10px'>"
-        "AI Sentiment Analysis</h2>"
-        "<table style='width:100%;border-collapse:collapse;background:#1c2330;"
-        "border-radius:8px;overflow:hidden;margin-bottom:24px'>"
-        "<thead><tr>" + heads + "</tr></thead>"
-        "<tbody>" + rows + "</tbody></table>"
-    )
