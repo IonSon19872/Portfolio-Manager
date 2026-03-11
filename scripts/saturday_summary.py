@@ -117,11 +117,9 @@ def fetch_next_week_calendar(cfg: dict) -> dict:
         "next_fri":  next_fri,
     }
 
-
 def main():
     log.info("=== Saturday Weekly Summary ===")
     cfg = load_config()
-
     snapshot   = load_json(SNAPSHOT_F, {"stocks": [], "etfs": [], "total_eur": 0})
     week_open  = load_json(WEEK_OPEN_F, {})
     intel_data = load_json(INTEL_F, {"holdings": []})
@@ -143,10 +141,6 @@ def main():
     next_mon = calendar["next_mon"]
     next_fri = calendar["next_fri"]
 
-    log.info("--- Building and sending Saturday email ---")
-    past_html = saturday_summary_html(snapshot, intel_data, week_movements, sentiments)
-
-    # Fetch AI sentiment for all stocks (skip ETFs, skip 0-share watchlist optional)
     log.info("--- Fetching OpenRouter sentiment ---")
     sentiments = []
     for h in cfg["portfolio"]["stocks"]:
@@ -167,21 +161,18 @@ def main():
                 "upper_bound": result.get("upper_bound", ""),
                 "contra":      result.get("contra",      ""),
             })
-        time.sleep(2)  # stay well within free tier rate limits
-      # 2. THEN build the email
+        time.sleep(2)
+
     log.info("--- Building and sending Saturday email ---")
     past_html = saturday_summary_html(snapshot, intel_data, week_movements, sentiments)
-  
     cal_html  = next_week_calendar_html(calendar, fmt_date(next_mon), fmt_date(next_fri))
 
-    news_marker = "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 12px'>News This Week</h2>"
+    news_marker   = "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 12px'>News This Week</h2>"
     footer_marker = "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
 
     if news_marker in past_html:
-        # Insert calendar before news section
         combined_html = past_html.replace(news_marker, cal_html + news_marker, 1)
     else:
-        # No news this week — insert before footer
         combined_html = past_html.replace(footer_marker, cal_html + footer_marker, 1)
 
     now_label = datetime.utcnow().strftime("%d %b %Y")
@@ -190,7 +181,6 @@ def main():
         combined_html,
         cfg
     )
-
     if sent:
         append_alert(
             "weekly_summary", "",
@@ -199,9 +189,9 @@ def main():
             str(len(calendar["dividends"])) + " dividends, " +
             str(len(calendar["splits"])) + " splits next week"
         )
-
     log.info("=== Done ===")
 
 
 if __name__ == "__main__":
     main()
+
