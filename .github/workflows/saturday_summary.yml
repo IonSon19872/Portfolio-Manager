@@ -26,7 +26,7 @@ jobs:
           EMAIL_FROM:          ${{ secrets.EMAIL_FROM }}
           EMAIL_PASSWORD:      ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_TO:            ${{ secrets.EMAIL_TO }}
-          PERPLEXITY_API_KEY:  ${{ secrets.PERPLEXITY_API_KEY }}
+          OPENROUTER_API_KEY:  ${{ secrets.OPENROUTER_API_KEY }}
         run: python scripts/saturday_summary.py
 
       - name: Commit updated alerts log
