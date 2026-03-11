@@ -1,5 +1,11 @@
 [
   {
+    "ts": "2026-03-11 19:22 UTC",
+    "type": "weekly_summary",
+    "ticker": "",
+    "message": "Weekly summary sent - 0 earnings, 0 dividends, 0 splits next week"
+  },
+  {
     "ts": "2026-03-11 19:02 UTC",
     "type": "weekly_summary",
     "ticker": "",
