@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from shared import (
     load_config, load_json, save_json, append_alert, send_email,
     SNAPSHOT_F, INTEL_F, DATA_DIR,
+    get_stock_data, get_earnings_calendar, get_dividends, get_stock_splits,
     get_openrouter_sentiment,
     saturday_summary_html, next_week_calendar_html, sentiment_html,
     log
