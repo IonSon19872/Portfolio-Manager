@@ -1,5 +1,11 @@
 [
   {
+    "ts": "2026-03-11 09:10 UTC",
+    "type": "digest",
+    "ticker": "",
+    "message": "Morning digest sent at 09:10 UTC"
+  },
+  {
     "ts": "2026-03-11 08:54 UTC",
     "type": "weekly_summary",
     "ticker": "",
