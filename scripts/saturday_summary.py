@@ -143,7 +143,7 @@ def main():
 
 
     log.info("--- Building and sending Saturday email ---")
-    past_html = saturday_summary_html(snapshot, intel_data, week_movements, sentiments)
+    past_html = saturday_summary_html(snapshot, intel_data, week_movements)
     cal_html  = next_week_calendar_html(calendar, fmt_date(next_mon), fmt_date(next_fri))
 
     news_marker   = "<h2 style='font-size:14px;color:#f0f2f5;margin:24px 0 12px'>News This Week</h2>"
