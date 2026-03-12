@@ -206,92 +206,98 @@
           "action": "up"
         },
         {
-          "date": "2026-03-05",
-          "firm": "Tigress Financial",
-          "from_grade": "Strong Buy",
-          "to_grade": "Strong Buy",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-05",
-          "firm": "Tigress Financial",
-          "from_grade": "Strong Buy",
-          "to_grade": "Strong Buy",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-05",
-          "firm": "Tigress Financial",
-          "from_grade": "Strong Buy",
-          "to_grade": "Strong Buy",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-05",
-          "firm": "Tigress Financial",
-          "from_grade": "Strong Buy",
-          "to_grade": "Strong Buy",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-05",
-          "firm": "Tigress Financial",
-          "from_grade": "Strong Buy",
-          "to_grade": "Strong Buy",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-05",
-          "firm": "Tigress Financial",
-          "from_grade": "Strong Buy",
-          "to_grade": "Strong Buy",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-03",
-          "firm": "Wedbush",
-          "from_grade": "Outperform",
-          "to_grade": "Outperform",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-05",
-          "firm": "Tigress Financial",
-          "from_grade": "Strong Buy",
-          "to_grade": "Strong Buy",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-03",
-          "firm": "Wedbush",
-          "from_grade": "Outperform",
-          "to_grade": "Outperform",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-05",
-          "firm": "Tigress Financial",
-          "from_grade": "Strong Buy",
-          "to_grade": "Strong Buy",
-          "action": "up"
-        },
-        {
-          "date": "2026-03-03",
-          "firm": "Wedbush",
-          "from_grade": "Outperform",
-          "to_grade": "Outperform",
-          "action": "up"
-        }
-      ],
-      "new_ratings": [
-        {
           "date": "2026-03-12",
           "firm": "Cantor Fitzgerald",
           "from_grade": "Overweight",
           "to_grade": "Overweight",
           "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-03",
+          "firm": "Wedbush",
+          "from_grade": "Outperform",
+          "to_grade": "Outperform",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-03",
+          "firm": "Wedbush",
+          "from_grade": "Outperform",
+          "to_grade": "Outperform",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Tigress Financial",
+          "from_grade": "Strong Buy",
+          "to_grade": "Strong Buy",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-03",
+          "firm": "Wedbush",
+          "from_grade": "Outperform",
+          "to_grade": "Outperform",
+          "action": "up"
         }
       ],
+      "new_ratings": [],
       "news": [
         {
           "title": "1 Retail Stock I'd Rather Own Than Best Buy",
@@ -351,6 +357,20 @@
       "ticker": "AAPL",
       "name": "Apple",
       "ratings": [
+        {
+          "date": "2026-03-05",
+          "firm": "Wedbush",
+          "from_grade": "Outperform",
+          "to_grade": "Outperform",
+          "action": "up"
+        },
+        {
+          "date": "2026-03-05",
+          "firm": "Rosenblatt",
+          "from_grade": "Neutral",
+          "to_grade": "Neutral",
+          "action": "reit"
+        },
         {
           "date": "2026-03-05",
           "firm": "Wedbush",
