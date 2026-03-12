@@ -9,7 +9,7 @@ price_digest.py - Two modes, controlled by DIGEST_MODE env var
 import os
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 sys.path.insert(0, str(Path(__file__).parent))
 from shared import (
