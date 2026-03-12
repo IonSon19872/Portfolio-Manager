@@ -251,16 +251,26 @@ def check_movements_and_ratings(snapshot: dict, cfg: dict) -> int:
 
 def check_earnings_alerts(cfg: dict):
     """Send alert if any holding has earnings in the next 2 days."""
-    from datetime import timedelta
     all_holdings = cfg["portfolio"]["stocks"] + cfg["portfolio"]["etfs"]
+    etf_tickers  = {h.get("ticker") for h in cfg["portfolio"].get("etfs", [])}
     today        = datetime.utcnow().date()
     alerts       = []
+
+    SKIP_TICKERS = {"BTC-USD", "GC=F", "SI=F", "ETH-USD", "BTC"}
 
     for h in all_holdings:
         ticker = (h.get("ticker") or "").strip()
         name   = h.get("name", ticker)
         if not ticker:
             continue
+        # Skip commodities, crypto, ETFs — no earnings calendar
+        if ticker in SKIP_TICKERS:
+            continue
+        if ticker in etf_tickers:
+            continue
+        if "=" in ticker or ticker.endswith("-USD") or ticker.endswith("-EUR"):
+            continue
+
         try:
             from_date = today.isoformat()
             to_date   = (today + timedelta(days=2)).isoformat()
@@ -280,6 +290,7 @@ def check_earnings_alerts(cfg: dict):
             log.warning("  earnings check failed for " + ticker + ": " + str(e))
 
     if not alerts:
+        log.info("  No upcoming earnings in next 2 days")
         return
 
     now  = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
@@ -416,27 +427,14 @@ def check_52w_alerts(snapshot: dict, cfg: dict):
 def main():
     mode = os.environ.get("DIGEST_MODE", "full").strip().lower()
     log.info("=== Price Digest  mode=" + mode + " ===")
-
     cfg = load_config()
-
     log.info(
         "Portfolio: " + str(len(cfg["portfolio"]["stocks"])) + " stocks, " +
         str(len(cfg["portfolio"]["etfs"])) + " ETFs"
     )
-
     snapshot = build_snapshot(cfg)
     log.info("Total portfolio value: EUR " + "{:,.2f}".format(snapshot["total_eur"]))
-
     save_json(SNAPSHOT_F, snapshot)
-
-    # Save morning prices as baseline for intraday movement checks
-    cfg["morning_prices"] = {
-        item["ticker"]: item["price_eur"]
-        for item in snapshot["stocks"] + snapshot["etfs"]
-        if "error" not in item and item.get("price_eur")
-    }
-    save_config(cfg)
-  
     log.info("Snapshot saved -> " + str(SNAPSHOT_F))
 
     if datetime.utcnow().weekday() == 0:
@@ -447,6 +445,16 @@ def main():
             log.info("Monday open snapshot saved -> " + str(WEEK_OPEN_F))
 
     if mode == "full":
+        # Save morning prices as baseline for intraday movement checks
+        cfg["morning_prices"] = {
+            item["ticker"]: item["price_eur"]
+            for item in snapshot["stocks"] + snapshot["etfs"]
+            if "error" not in item and item.get("price_eur")
+        }
+        cfg["last_prices"] = dict(cfg["morning_prices"])
+        save_config(cfg)
+        log.info("morning_prices saved for " + str(len(cfg["morning_prices"])) + " tickers")
+
         log.info("--- Fetching news for morning digest ---")
         news_days_back = cfg.get("finnhub", {}).get("news_days_back", 1)
         max_news       = cfg.get("finnhub", {}).get("max_news_per_stock", 3)
@@ -464,8 +472,8 @@ def main():
                 log.info("  " + ticker + ": " + str(len(news)) + " article(s)")
 
         log.info("--- Sending full morning digest ---")
-        label    = datetime.utcnow().strftime("%H:%M UTC")
-        html     = digest_html(snapshot, label)
+        label = datetime.utcnow().strftime("%H:%M UTC")
+        html  = digest_html(snapshot, label)
         if holdings_with_news:
             html = html.replace(
                 "<p style='color:#4a5568;font-size:10px;margin-top:24px'>",
@@ -473,21 +481,19 @@ def main():
                 "<p style='color:#4a5568;font-size:10px;margin-top:24px'>"
             )
         send_email("Portfolio Digest - " + label, html, cfg)
-      # Update last_prices silently so intraday checks have fresh baseline
-       
         append_alert("digest", "", "Morning digest sent at " + label)
+
+        log.info("--- Earnings alert check ---")
+        check_earnings_alerts(cfg)
 
     elif mode == "movement":
         log.info("--- Movement + analyst check ---")
         alerts_triggered = check_movements_and_ratings(snapshot, cfg)
         log.info(str(alerts_triggered) + " alert(s) sent")
-    
-    log.info("--- Earnings alert check ---")
-    check_earnings_alerts(cfg)
 
-    log.info("--- 52-week high/low alert check ---")
-    check_52w_alerts(snapshot, cfg)
-  
+        log.info("--- 52-week high/low alert check ---")
+        check_52w_alerts(snapshot, cfg)
+
     log.info("=== Done ===")
 
 
