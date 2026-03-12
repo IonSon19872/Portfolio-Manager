@@ -1,5 +1,17 @@
 [
   {
+    "ts": "2026-03-12 08:44 UTC",
+    "type": "52w_high",
+    "ticker": "BA.L",
+    "message": "BA.L 52W HIGH EUR 26.53"
+  },
+  {
+    "ts": "2026-03-12 08:44 UTC",
+    "type": "digest",
+    "ticker": "",
+    "message": "Morning digest sent at 08:44 UTC"
+  },
+  {
     "ts": "2026-03-11 19:22 UTC",
     "type": "weekly_summary",
     "ticker": "",
