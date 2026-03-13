@@ -1,5 +1,11 @@
 [
   {
+    "ts": "2026-03-13 11:48 UTC",
+    "type": "52w_high",
+    "ticker": "BA.L",
+    "message": "BA.L 52W HIGH EUR 26.72"
+  },
+  {
     "ts": "2026-03-13 09:58 UTC",
     "type": "52w_high",
     "ticker": "BA.L",
