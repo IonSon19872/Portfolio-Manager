@@ -1,29 +1,5 @@
 [
   {
-    "ts": "2026-03-13 16:07 UTC",
-    "type": "movement",
-    "ticker": "VH2.DE",
-    "message": "VH2.DE DOWN [CROSSED 3%] | vs morning: -3.5% | vs last check: -1.8% (morning EUR 80.80, last EUR 79.40, now EUR 78.00)"
-  },
-  {
-    "ts": "2026-03-13 14:32 UTC",
-    "type": "52w_high",
-    "ticker": "BA.L",
-    "message": "BA.L 52W HIGH EUR 26.68"
-  },
-  {
-    "ts": "2026-03-13 14:32 UTC",
-    "type": "movement",
-    "ticker": "SMHN.DE",
-    "message": "SMHN.DE UP [CROSSED 3%] | vs morning: +4.0% | vs last check: +1.3% (morning EUR 58.60, last EUR 60.15, now EUR 60.95)"
-  },
-  {
-    "ts": "2026-03-13 14:32 UTC",
-    "type": "movement",
-    "ticker": "SNDK",
-    "message": "SNDK UP [CROSSED 3%] | vs morning: +3.1% | vs last check: +3.2% (morning EUR 540.11, last EUR 539.49, now EUR 556.61)"
-  },
-  {
     "ts": "2026-03-13 11:48 UTC",
     "type": "52w_high",
     "ticker": "BA.L",
