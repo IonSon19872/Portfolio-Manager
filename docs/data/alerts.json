@@ -1,5 +1,35 @@
 [
   {
+    "ts": "2026-03-13 18:02 UTC",
+    "type": "52w_high",
+    "ticker": "BA.L",
+    "message": "BA.L 52W HIGH EUR 26.70"
+  },
+  {
+    "ts": "2026-03-13 18:02 UTC",
+    "type": "movement",
+    "ticker": "SNDK",
+    "message": "SNDK UP | vs morning: +5.5% | vs last check: +2.4% (morning EUR 540.11, last EUR 556.64, now EUR 570.08)"
+  },
+  {
+    "ts": "2026-03-13 18:02 UTC",
+    "type": "movement",
+    "ticker": "BESI.AS",
+    "message": "BESI.AS DOWN [CROSSED 3%] | vs morning: -4.1% | vs last check: -2.0% (morning EUR 193.10, last EUR 188.90, now EUR 185.10)"
+  },
+  {
+    "ts": "2026-03-13 18:02 UTC",
+    "type": "movement",
+    "ticker": "VH2.DE",
+    "message": "VH2.DE DOWN | vs morning: -5.1% | vs last check: -1.7% (morning EUR 80.80, last EUR 78.00, now EUR 76.70)"
+  },
+  {
+    "ts": "2026-03-13 18:02 UTC",
+    "type": "movement",
+    "ticker": "ENR.DE",
+    "message": "ENR.DE DOWN [CROSSED 3%] | vs morning: -3.3% | vs last check: -0.3% (morning EUR 148.80, last EUR 144.45, now EUR 143.95)"
+  },
+  {
     "ts": "2026-03-13 11:48 UTC",
     "type": "52w_high",
     "ticker": "BA.L",
