@@ -199,6 +199,13 @@
           "action": "up"
         },
         {
+          "date": "2026-03-12",
+          "firm": "Cantor Fitzgerald",
+          "from_grade": "Overweight",
+          "to_grade": "Overweight",
+          "action": "up"
+        },
+        {
           "date": "2026-03-05",
           "firm": "Tigress Financial",
           "from_grade": "Strong Buy",
@@ -744,5 +751,5 @@
       "morningstar": {}
     }
   ],
-  "updated": "2026-03-12"
+  "updated": "2026-03-13"
 }
