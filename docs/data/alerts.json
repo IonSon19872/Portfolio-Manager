@@ -1,5 +1,11 @@
 [
   {
+    "ts": "2026-03-13 16:07 UTC",
+    "type": "movement",
+    "ticker": "VH2.DE",
+    "message": "VH2.DE DOWN [CROSSED 3%] | vs morning: -3.5% | vs last check: -1.8% (morning EUR 80.80, last EUR 79.40, now EUR 78.00)"
+  },
+  {
     "ts": "2026-03-13 14:32 UTC",
     "type": "52w_high",
     "ticker": "BA.L",
